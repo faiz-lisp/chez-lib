@@ -6,6 +6,7 @@
 
   - Update notes:
     - 1.99
+      - B upd : files/cont
       - a add : (collect 10 (do-sth))
       - : add : int<->str/system, digit<->char, global vars
     - 1.98
@@ -95,7 +96,7 @@
     - eq =, eql
 
   - todo:
-    - mv to gitee
+    - file-name
     - lam/va, lam-macro
     - (deep-action/map/apply g xs [seq]): d-remov
     - include
@@ -135,6 +136,7 @@
     - to optimize
       - replaces
     - to fix
+      - save-file
       - replace
 
   - cant/hard: get-addr
@@ -3924,44 +3926,45 @@ to-test:
 
 ;(file/string ss {num 1} [s-path "."] [case? T] [show-ori-when-fail? T] [chk-ext ] [tar-format id])
 (def/va
-  (files/cont ss ;[num 1]
+  (files/cont ss
     [s-path "."]
-    [case? T] [show-ori-when-fail? T]
+    [case? T] ;[show-ori-when-fail? T]
+    [more? F]
     [chk-ext (rcurry mem? '("h" "cpp" "txt" "md"))] ;id
     [tar-format id] ;(rcurry str/sep-chars '[#\x0])
   )
   (letn
     ( [conv (if case? id str-upcase)]
       [ss2  (tar-format (conv ss))] ) ;may not need to eq #\nul
-    (def (~ s-path num)
+    (def (~ s-path)
       (let
         ( [things (ls s-path)]
           [rel-path (lam (x) [strcat s-path "/" x])] )        
-        (def (_ ret xs num)
+        (def (_ ret xs)
           (if [nilp xs] ;
-            (if (nilp ret)
-              (if show-ori-when-fail? ss F) ; else if num=0
-              ret ) ;(if (<= num 0) ret ;
+            (if (nilp ret) ss ret) ;(if (<= num 0) ret ;
             (let/ad xs
               (if [folder? (rel-path a)]
-                (let ((resl [~ (rel-path a) num])) ;
-                  (if [(if show-ori-when-fail? consp id) resl] ;
+                (let ((resl [~ (rel-path a)])) ;
+                  (if [consp resl] ;
                     (append resl ret) ;[_ (append resl ret) d (1- num)]
-                    [_ ret d num]
+                    [_ ret d]
                 ) )
                 (if [chk-ext (file-ext a)] ; "xlsx" ;[chk-ext (rcurry mem? '["h" "cpp"])]
                   (letn
                     ( [cont (load-file  (rel-path a))]
                       [bool (str-exist? (conv cont) ss2)] ) ;one file search n
                     (if bool
-                      (cons (rel-path a) ret) ;[_ (cons (rel-path a) ret) d (1- num)]
-                      [_ ret d num]
+                      (if more?
+                        [_ (cons (rel-path a) ret) d]
+                        (cons (rel-path a) ret) )
+                      [_ ret d]
                   ) )
-                  [_ ret d num]
-        ) ) ) ) ) ;)        
-        (_ nil things num)  
+                  [_ ret d]
+        ) ) ) ) )
+        (_ nil things)
     ) )
-    (~ s-path 1) ;num
+    (~ s-path)
 ) )
 
 ;码
