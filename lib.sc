@@ -6,6 +6,7 @@
 
   - Update notes:
     - 1.99
+      - a add : (collect 10 (do-sth))
       - : add : int<->str/system, digit<->char, global vars
     - 1.98
       - Z add : separa, strcat/sep
@@ -670,6 +671,17 @@ to-test:
             body ... )
           ve )
 ) ) ) )
+
+;(collect 20 expr)
+(defsyt collect
+  ( [_ (i num) do-sth]
+    (let _ ([i 0])
+      (if [>= i num] nil
+        (cons do-sth [_ (1+ i)]) ;
+  ) ) )
+  ( [_ num do-sth]
+    (collect [i num] do-sth)
+) )
 
 (def-syt for ;(for-each g xs)
   (syt-ruls (in : as)  
