@@ -1,10 +1,12 @@
-(define (version) "Chez-lib v1.98") ;
+(define (version) "Chez-lib v1.99") ;
 (define (git-url) "https://gitee.com/faiz-xxxx/chez-lib.git")
 
 #|
 == Chez-lib.sc (mainly for Windows) - written by Faiz
 
   - Update notes:
+    - 1.99
+      - : add : int<->str/system, digit<->char, global vars
     - 1.98
       - Z add : separa, strcat/sep
       - Y upd : file/string
@@ -129,6 +131,10 @@
     - car! (cons 1 2 '()) cons! conz!
     - rev!
     - seems that newlisp call scheme and c will be more free.
+    - to optimize
+      - replaces
+    - to fix
+      - replace
 
   - cant/hard: get-addr
   - cant implete the same thing:
@@ -209,7 +215,7 @@ Code:
 ```
 |#
 
-(import (chezscheme)) ;for --program parameter
+(import (chezscheme)) ;need this when use --program
 ;(collect-request-handler void) ;~ for some optimizing
 
 ;(load (str *lib-path* "/match.ss"))
@@ -245,8 +251,8 @@ Code:
 
 (ali trim trim-left)
 (ali trim-n trim-left-n)
-(alias trim-head trim-head-1)
-(alias trim-tail trim-tail-1)
+;(alias trim-head trim-head-1)
+;(alias trim-tail trim-tail-1)
 
 ; shorthands
 
@@ -1483,8 +1489,6 @@ to-test:
   (mk-htab *htab/fn-doc* nil)
 )
 
-;Bug: when rec def/doc in def
-
 ;===
 
 (def (id x . xs) x)
@@ -2110,27 +2114,34 @@ to-test:
     [rev (_ xz nil)]
 ) )
 
-;(trim-head '(1 2 1 2 3) '(1 2)) ;~> '(3)
-(def (trim-head-1 xs serial) ;n~ ;times?
+;(trim-head '(1 1 2 1 1 2 1 1 3) '(1 1 2)) ;~> '(1 1 3)
+(def (trim-head XS TS) ;n-times
   (def (_ ys ts)
     (if~
       (nilp ts)
-        [trim-head-1 ys serial]
-      (nilp ys) xs
+        [trim-head ys TS] ;
+      (nilp ys)
+        XS
       (eq [car ys] [car ts])
         [_ (cdr ys) (cdr ts)]
-      else xs
+      XS ;
   ) )
-  (_ xs serial)
+  (_ XS TS)
 )
 
-;(trim-tail '(1 2 3) '(2 3)) ;~> '(1)
-(def (trim-tail-1 xs ts) ;@
+;(trim-tail '(1 4 3 2 3 2 3) '(2 3)) ;~> '(1 4 3)
+(def (trim-tail xs ts) ;@
   (let
     ( [rxs (rev xs)]
       [rts (rev ts)] )
-    [rev (trim-head-1 rxs rts)] ;
+    [rev (trim-head rxs rts)] ;
 ) )
+
+;trim-all xs ts
+;(trim-all '(1 2 1 2 3 4 5 1 2 6 1 2 7 1 2 1 2) '(1 2)) ;~> '(3 4 5 6 7)
+(def (trim-all XS TS)
+  
+)
 
 ;(trim '(1 2 3 4 1 2) '(1 2)) ;~> '(3 4)
 (def (trim-left xs ts)
@@ -2318,11 +2329,12 @@ to-test:
 )
 
 ;(replaces '(x x s s a) '(x s) '(y z))
-;(replaces '(x x s s a) '([x s][s a]) '([y][z]))
+;(replaces '(x x x s s a) '(x x s) '(y z))
+;todo (replaces '(x x s s a) '([x s][s a]) '([y][z]))
 (def (replaces ls xs ys) ;%
   (def (_ l ret)
     (if~
-      [nilp l] ret
+      [nilp  l] ret
       [consp l]
         (cons [_ (car l) nil] [_ (cdr l) ret])
       (let ([n (nth-of l xs)])
@@ -2370,6 +2382,38 @@ to-test:
 ) ) )
 
 ;elap cant print ""
+
+; number
+
+;num<->char num/char
+(def (digit->char x)
+  (int->char [+ (char->int #\0) x])
+)
+
+(def (char->digit x)
+  (redu - [map char->int (list x #\0)])
+)
+
+;(num->int/system num 36~62)
+(def/va (int->str/system num [scale 10] [chars (append *chs-numbers* *chs-Letters*)])
+  (def (_ ret num)
+    (if [=0 num] ret
+      (let
+        ( [rem (% num scale)]
+          [quot (quotient num scale)] )
+        [_ (cons rem ret) quot]
+  ) ) )
+  (list->str [map (curry xth chars) (_ nil num)])
+)
+
+(def/va (str->int/system snum [scale 10] [chars (append *chs-numbers* *chs-Letters*)]) ;snum
+  (def (_ ret xs)
+    (if [nilp xs] ret
+      (let/ad xs
+        [_ (+ (* ret scale) a) d]
+  ) ) )
+  (_ 0 (map [compose 1- (rcurry nth-of chars)] [str->list snum])) ;
+)
 
 ; string
 
@@ -3547,10 +3591,12 @@ to-test:
 )
 
 (define (fib0 n)
-  (define (_ n) ;
-    (if (< n 3) 1
-      (+ [_ (- n 2)] [_ (1- n)])
-  ) )
+  (define (_ n)
+    (if [< n 3] 1
+      (+
+        [_ (- n 2)]
+        [_ (- n 1)]
+  ) ) )
   (if (< n 0) 0
     (_ n)
 ) )
@@ -3574,9 +3620,9 @@ to-test:
     (caar
       (matrix-mul  ;
         (if [>0 n] ; or ret: if odd? n: positive, negative;
-          (matrix-pow '([ 0  1]
+          (matrix-pow `([ 0  1]
                         [ 1  1]) n) ;matrix may slower than paras
-          (matrix-pow '([-1  1]
+          (matrix-pow `([-1  1]
                         [ 1  0]) (- n)) )
         `([,pre]
           [,pos])
@@ -3743,9 +3789,9 @@ to-test:
 ) )
 
 (def (save-file cont file) ;
-  [if (file-exists? file) (delete-file file)]
+  [if (file-exists? file) (delete-file file)] ;
   (let ([of (open-output-file file)]) ;
-    (write cont of) ;
+    (write cont of) ;?
     (close-port of)
 ) )
 
@@ -3766,8 +3812,8 @@ to-test:
 ) )
 
 ;(grep "qq" (ls (cwd)) [ign-case? T])
-(def/va (grep sx sz [ign-case? T])
-  (let ([str-with (if ign-case? with-str?-nocase with-str?)])
+(def/va (grep sx sz [case? T])
+  (let ([str-with (if case? with-str? with-str?-nocase)])
     (filter [rcurry str-with sx] sz)
 ) )
 
@@ -3866,7 +3912,7 @@ to-test:
 
 ;(file/string ss {num 1} [s-path "."] [case? T] [show-ori-when-fail? T] [chk-ext ] [tar-format id])
 (def/va
-  (file/string ss ;[num 1]
+  (files/cont ss ;[num 1]
     [s-path "."]
     [case? T] [show-ori-when-fail? T]
     [chk-ext (rcurry mem? '("h" "cpp" "txt" "md"))] ;id
@@ -4926,6 +4972,15 @@ to-test:
 ;
 
 (def (getcwd) (str-repl (command-result "cd") "\r\n" ""))
+
+
+; setq global vars
+
+(setq
+  *chs-numbers* [map digit->char (range 0 9)]
+  *chs-Letters* (str->list "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+)
+
 (setq *current-path* (str-repl (command-result "cd") "\r\n" "")) ; ?"Pro File"
 
 ; (def car car%) ;
