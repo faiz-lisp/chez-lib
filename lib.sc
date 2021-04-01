@@ -1,4 +1,4 @@
-(define (version) "Chez-lib v1.99") ;
+(define (version) "Chez-lib v1.99") ;c
 (define (git-url) "https://gitee.com/faiz-xxxx/chez-lib.git")
 
 #|
@@ -11,24 +11,20 @@
       - : add : int<->str/system, digit<->char, global vars
     - 1.98
       - Z add : separa, strcat/sep
-      - Y upd : file/string
       - X add : str-divides, file-ext, str/sep-chars
-      - W add : some aliases, str-exist?
+      - W add : str-exist?
       - v upd : conz, id
       - T upd : get-file-var
       - S add : load-file
       - r add : key->val xz x
-      - Q add : (divide-after '(x m k y) '(m k)) ~> '([x m k] [y]); divide; str-divide
+      - Q add : (divide-after '(x m k y m k z) '(m k)) ~> '([x m k] [y m k] [z]); divide; str-divide
       - p Upd : (lisp nil) ~> F
       - O add : path operations and grep
       - o add : range/total
-      - N upd : range
       - n add : (fixnum 1/1.2);\n upd : (sleep 1.0);
-      - J Upd : write-file!; write-new-file
       - I add : make-file, make-path
-      - H upd : list-repl ~> replace, str-repl;\n add : replaces ;
-      - E upd : add list/sep, and so on
-      - D add : operations for file
+      - H upd : str-repl;\n add : replaces ;
+      - E upd : add list/sep
       - C add : (list/seps '(1 2 3) '(4 5)) ~> '(1 4 5 2 4 5 3)
       - B Add : (lam/lams ([(a) b] c . xs) [append (list a b c) xs])
       - : add : in-range;
@@ -47,10 +43,10 @@
     - 1.96: Add : def/doc, (doc myfunc1), docs
     - 1.95c Upd : ./
     - 1.95: Add : fold (_ f x xs), foldl-n (_ n fn xs), infix->prefix (_ xs)
-    - 1.94: Add : self-act (_ pow 3 3) => (pow 3 3 3), rev-calc (_ pow 4) => 2
-    - 1.93: Simp: fast-expt, (_ g x [n 1])
-    - 1.92: Upd : api-with: symbol -> macro
-    - 1.91: add : logic for dividing vowels in japanese; T, F;
+    - 1.94: Add : self-act (_ pow 2 3) => (pow 2 2 2), rev-calc (_ pow 4) => 2
+    - 1.93: Simp: algo: fast-expt, (_ g x [n 1])
+    - 1.92: Upd : api-ls: symbol -> macro
+    - 1.91: add : logic for dividing vowels in japanese
     - 1.90: Add : data of jp, doremi
 
   - Suffixes:
@@ -146,6 +142,40 @@
   - seq of implements:
     - (g x y) -> apply -> curry
 
+  - modules
+    - syntax
+      - define
+      - setq
+      - match
+      - short-hand
+    - list
+    - string
+    - API
+      - type
+      - disp
+    - file
+    - C
+    - struct
+    - conv
+    - math
+    - algo
+    - AI
+    - module/topic
+      - root
+      - church
+      - sicp
+      - onlisp
+      - prolog
+      - yin
+      - faiz
+    - misc
+    - setting
+      - fn/short-hand
+    - data
+    - main
+      - exp/idea
+    - cleaner
+    
   - tolearn:
     - match
     - import
@@ -2534,7 +2564,7 @@ to-test:
     (els          "")
 ) )
 (defn lis->str (xs)
-  (redu~ strcat (map any->str xs))
+  (redu~ strcat (map any->str xs)) ;
 ) ;lis2str
 
 (def (list->num xs) ;10 based
@@ -2816,11 +2846,12 @@ to-test:
 ;pieces of the most beautiful code
 
 (def/doc (rev xs)
-  (def (_ xs ret)
+  (def (_ ret xs)
     (if (nilp xs) ret
-      (_ (cdr xs) [cons (car xs) ret])
-  ) )
-  (_ xs nil)
+      (_ [cons (car xs) ret]
+        (cdr xs)
+  ) ) )
+  [_ nil xs]
 )
 
 (def/doc (flat xs)
@@ -2890,58 +2921,59 @@ to-test:
 (defn  neq (x y) [not(eq  x y)])
 (defn !eql (x y) [not(eql x y)])
 
-(defn tyeq (x y) ;
-  (eq(ty x)(ty y))
+(def (tyeq x y) ;
+  (eq (ty x) (ty y))
 )
-(defn ty-neq (x y)
-  (neq(ty x)(ty y))
+(def (ty-neq x y)
+  (neq (ty x) (ty y))
 )
 
-(def (sym< x y) (redu-map string<? sym->str(li x y)) )
-(def (sym> x y) (redu-map string>? sym->str(li x y)) )
+(def (sym< x y) (redu-map string<? sym->str (list x y)) )
+(def (sym> x y) (redu-map string>? sym->str (list x y)) )
 
-(defn atom-cmp (x y)
-  (letn ( [type (ty x)]
-          [<>
-            (case type
-              ("string" (li string<? string>?))
-              ("char"   (li char<? char>?))
-              ("symbol" [li sym< sym>])
-              ("number" (li < >))
-              ;vector
-              (else nil)
-        ) ] )
+(def (atom-cmp x y)
+  (letn
+    ( [type (ty x)]
+      (<>
+        (case type
+          ("string" (list string<? string>?))
+          ("char"   (list char<? char>?))
+          ("symbol" [list sym< sym>])
+          ("number" (list < >))
+          ;vector
+          (else nil)
+    ) ) )
     (if (eq type (ty y))
       (if (nilp <>)
         (if (eql x y) = nil) ;
         (cond
-          ([(car <>) x y] '<)
+          ([(car  <>) x y] '<)
           ([(cadr <>) x y] '>)
           (else '=)
       ) )
       nil ;
 ) ) )
-(defn mk<>= (f xs cmp)
-  (let ([resl(redu f xs)])
+(def (mk<>= f xs cmp)
+  (let ([resl (redu f xs)])
     (if (nilp resl) nil
       (eq resl cmp)
 ) ) )
-(defn atom>(x y) (mk<>= atom-cmp (li x y) '>))
-(defn atom<(x y) (mk<>= atom-cmp (li x y) '<))
+(def (atom> x y) (mk<>= atom-cmp (list x y) '>))
+(def (atom< x y) (mk<>= atom-cmp (list x y) '<))
 
 (def (stru-cmp xs ys)
   (def (_ xs ys)
-    (if (nilp xs) '= ;
-      (if (consp xs) ;? < atom nil pair list
-        (letn ([x(car xs)] [y(car ys)])
-          (if (consp x)
-            (let ([resl [_ x y]])
+    (if [nilp xs] '= ;
+      (if [consp xs] ;? < atom nil pair list
+        (let ([x (car xs)] [y (car ys)])
+          (if [consp x]
+            (let ((resl [_ x y]))
               (case resl
                 (= [_ (cdr xs) (cdr ys)])
                 (else resl)
             ) )
-            (if (ty-neq x y) nil
-              (let ([resl (atom-cmp x y)])
+            (if [ty-neq x y] nil ;
+              (let ([resl (atom-cmp x y)]) ;
                 (case resl
                   (= [_ (cdr xs) (cdr ys)])
                   (else resl)
@@ -2951,9 +2983,9 @@ to-test:
   (_ xs ys)
 )
 ;(defn stru> (x y) (mk<>= stru-cmp (li x y) '>))
-(defn stru> (x y) (eq (stru-cmp x y) '>))
-(defn stru< (x y) (eq (stru-cmp x y) '<))
-(defn stru= (x y) (eq (stru-cmp x y) '=))
+(def (stru> x y) [eq (stru-cmp x y) '>])
+(def (stru< x y) [eq (stru-cmp x y) '<])
+(def (stru= x y) [eq (stru-cmp x y) '=])
 
 (def (assert0 resl test)
   (echol
@@ -3153,17 +3185,17 @@ to-test:
 )
 
 ;(rev-calc pow target) =(checker)=> x
-(def/va (rev-calc f-x tar [= ~=]) ;inexaQ
+(def/va (rev-calc fx tar [= ~=]) ;[exa? T] ;calc fx
   (def (_ nex x pre)
-    (let ([resl (f-x x)]) ;
+    (let ([resl (fx x)]) ;
       (if~
-        [= resl tar] ;(inexa
-            x ;)
-        [> resl tar]
-          [_ x (avg pre x) pre]
-          [_ nex (avg nex x) x]
+        [= tar resl] ;(inexa
+          x ;)
+        [> resl tar] ;stru>
+          [_ x (avg pre x) pre] ;
+        [_ nex (avg nex x) x]
   ) ) )
-  (_ tar 2 0) ;
+  [_ tar 2 0] ;
 )
 
 ; end of math
@@ -4918,7 +4950,6 @@ to-test:
 ;(unify '(p a b) '(p x y) '[x y]) ;~> ((A X) (B Y))
 ;(unify '[x(f x)(g z)] '[y (f(g b)) y] '(x y z))
 ;(unify `(a b) `(b X) '(X)) ;?-> fail
-
 
 (def (sym->chs sym)
   (str->list (sym->str sym))
