@@ -6,6 +6,7 @@
 
   - Update notes:
     - 1.99
+      - C add : choose, *paths*, rlist..., gotcha
       - B upd : files/cont
       - a add : (collect 10 (do-sth))
       - : add : int<->str/system, digit<->char, global vars
@@ -153,6 +154,7 @@
     - API
       - type
       - disp
+      - demo
     - file
     - C
     - struct
@@ -1213,25 +1215,18 @@ to-test:
 ) ) ) )
 
 ;X(car body) if-is string, save to (doc)
-(def-syt def/doc
-  (syt-ruls ()
-    ( [_ x] (define x *v) )
-    
-    ( [_ (g . args) body ...]
-      (begin ;
-        ;(add-to-htab! *htab/fn-lam* `,[raw (g . args)])
-        (add-to-htab! *htab/fn-lam* `,[raw (g (lam args body ...))]) ;
-        (define (g . args) body ...)
-    ) )
-    ; (def/doc (asd a) (list a)) (doc asd)~>(lam (a) ...)
-    
-    ; ( [_ x doc e]    
-      ; (define x e) )
-    ( [_ x e]
-      (begin
-        (add-to-htab! *htab/fn-lam* `,[raw (x e)])
-        (define x e) ;(def& x e last-action?)
-) ) ) )
+(defsyt def/doc
+  ( [_ x] (define x *v) )    
+  ( [_ (g . args) body ...]
+    (bgn
+      (add-to-htab! *htab/fn-lam* `,[raw (g (lam args body ...))]) ;bef def?
+      (define (g . args) body ...)
+  ) )
+  ( [_ x e]
+    (bgn
+      (add-to-htab! *htab/fn-lam* `,[raw (x e)])
+      (define x e) ;(def& x e last-action?)
+) ) )
 ;doc-code doc-paras
 
 (ali def define*)
@@ -1994,6 +1989,19 @@ to-test:
 ) )
 
 ; list
+
+(def (rconz ys x) ;?
+  (cons z ys)
+)
+(def (rlist . rs)
+  (rev rs)
+)
+(def (rcons z xs)
+  ; (let ([ys (list-copy xs)]) ;
+    ; (set-cdr! (last-pair ys) (cons z nil)) ;
+    ; ys )
+  (conz xs z) ;a bit faster than above
+)
 
 ;(key->val '([a 1][b 2]) 'a)
 (def/va (key->val xz x [= eql] [f-case id]) ;
@@ -2998,6 +3006,35 @@ to-test:
 (def (dec->hex dec) (fmt "0x~x" dec))
 (def (hex->dec hex) (evs (str-repl hex "0" "#" 1))) ;@
 
+; API
+
+; demo
+
+;(cost (gotcha 24 '(1 2 3 4 nil + - * / cons eq list) '() =))
+;(cost (gotcha 24 '(1 2 3 4 nil) '(+ - * / cons eq list) =))
+;cons eq If Quote
+;todo: num-paras fmt rand glob fast 
+(def/va
+  (gotcha [tar 24]
+    [data '(0. 1 2 3 4 5 6 7 8 9)] [ops '(+ - * /)] [= =] [packers '(list rlist)] ) ;(if (nilp ops) data ops)
+  (letn ;
+    ( [f  (choose [if (nilp ops) data ops])] ;need rand
+      [g  (choose [if (nilp ops) data ops])]
+      [a  (choose data)]
+      [b  (choose data)]
+      [c  (choose data)]
+      [p1 (choose packers)]
+      [tmp `(redu ,f (,p1 ,a [redu ,g (list ,b ,c)]))] ;
+      [resl (try [= tar (ev tmp)])] ;
+      (bool
+        (if (try-fail? resl) F
+          resl
+    ) ) )
+    (if bool
+      (cons f ([ev p1] a [cons g (list b c)])) ;exp
+      (fail) ;
+) ) )
+
 ; math
 
 (def =0? (curry eq 0))
@@ -3185,7 +3222,8 @@ to-test:
 )
 
 ;(rev-calc pow target) =(checker)=> x
-(def/va (rev-calc fx tar [= ~=]) ;[exa? T] ;calc fx
+;(cube-root 27.) is very slow
+(def/va (rev-calc fx tar [= ~=]) ;[exa? T] ;todo: f-xs=y... for +-*/
   (def (_ nex x pre)
     (let ([resl (fx x)]) ;
       (if~
@@ -3216,6 +3254,39 @@ to-test:
     ) ) )
     (_ (cdr xs) (car xs) [- (len xs) n])
 ) )
+
+; modules
+ 
+; on lisp
+
+;
+(def/va (choose xs) ;[*paths* nil]) ;? ;syt: fail
+  (define [~ choices] ;choose
+    (if [nilp choices]
+      [fail]
+      (call-with-current-continuation
+        (lambda [cc]
+          (setq *paths* ;
+            (cons
+              (lambda ()
+                (cc [~ (cdr choices)]) ) ;
+              *paths*
+          ) )
+          (car choices)
+  ) ) ) )
+  ;(def fail nil)
+  (call-with-current-continuation ;
+    (lambda [cc]
+      (setq fail ;
+        (lambda ()
+          (if [nilp *paths*] ;
+            [cc F] ;failsym
+            (let ([p1 (car *paths*)])
+              [setq *paths* (cdr *paths*)]
+              (p1) ;
+  ) ) ) ) ) )
+  [~ xs]
+)
 
 (def (infix->prefix xs)
   (def(_ ret xs)
@@ -3962,7 +4033,7 @@ to-test:
     [s-path "."]
     [case? T] ;[show-ori-when-fail? T]
     [more? F]
-    [chk-ext (rcurry mem? '("h" "cpp" "txt" "md"))] ;id
+    [chk-ext (rcurry mem? '("h" "cpp" "txt" "md"))] ;id case?
     [tar-format id] ;(rcurry str/sep-chars '[#\x0])
   )
   (letn
@@ -5019,8 +5090,11 @@ to-test:
 
 (def (getcwd) (str-repl (command-result "cd") "\r\n" ""))
 
+; settings
 
 ; setq global vars
+
+(setq *paths* nil) ;shared ;ng name
 
 (setq
   *chs-numbers* [map digit->char (range 0 9)]
