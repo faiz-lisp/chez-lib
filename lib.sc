@@ -6,6 +6,8 @@
 
   - Update notes:
     - 1.99
+      - F add : true-choose, str-trim-all
+      - e upd : defination of choose -> choose%
       - D upd : case (compose); fix : gotcha;
       - d add : church, church-
       - C add : choose, *paths*, rlist..., gotcha
@@ -70,9 +72,10 @@
     - ~var: temp variety
     - *global-var*
 
-  - versions:
+  - editions/parts:
     - idea; ideal; refined; stable;
     - fast; Grace; safe
+    - std, core, ex, idea, main
 
   - Which ops are slow?: (sequence: fast->slow)
     - last-pair last list?
@@ -377,6 +380,9 @@ Code:
 ; To put aliases here
 
 (alias dmap deep-map)
+
+(alias choose choose%)
+;(alias choose true-choose)
 
 (ali api-ls api-with)
 
@@ -2187,10 +2193,20 @@ to-test:
     [rev (trim-head rxs rts)] ;
 ) )
 
-;trim-all xs ts
-;(trim-all '(1 2 1 2 3 4 5 1 2 6 1 2 7 1 2 1 2) '(1 2)) ;~> '(3 4 5 6 7)
-(def (trim-all XS TS)
-  
+;(_ '(1 2 1 2 3 4 5 1 2 6 1 2 1 7 1 2 1 2) '(1 2)) ;~> '(3 4 5 6 1 7)
+(def (trim-all XS TS) ;
+  (def (_ ret tmp xs ts)
+    (if (nilp ts)
+      [_ ret nil xs TS] ;
+      (let ([ta (car ts)] [td (cdr ts)]) ;
+        (if (nilp xs)
+          (append tmp ret) ;
+          (let/ad xs
+            (if (eq a ta)
+              [_ ret (cons a tmp) d td]
+              [_ (cons a (append tmp ret)) nil d TS] ;
+  ) ) ) ) ) )
+  [rev (_ nil nil XS TS)] ;
 )
 
 ;(trim '(1 2 3 4 1 2) '(1 2)) ;~> '(3 4)
@@ -2497,6 +2513,10 @@ to-test:
 
 (def/va (str-trim ss [s-trim " "]) ;_ "asasda" "as"
   (str [trim (str->list ss) (str->list s-trim)])
+)
+;(str-trim-all "asd.sda.sa." ".s")
+(def/va (str-trim-all ss [s-trim " "])
+  (str [trim-all (str->list ss) (str->list s-trim)])
 )
 
 ;(str-trim-n "asdsadsads" '("as" "ds")) ;~> "adsa"
@@ -3009,19 +3029,19 @@ to-test:
 
 ; demo
 
-;(cost (gotcha 24 '(1 2 5 10 nil) '(+ - * / eq id cons list) =))
-;(cost (gotcha 24 '(1 2 3 4 nil + - * / cons eq list) '() =))
-;(cost (gotcha (church 2) '(1) '(church church1+) church=))
-;(cost (gotcha (church 2) '(1 church1) '(church church+) church=))
+;(cost (_ 24 '(1 2 5 10 nil) '(+ - * / eq id cons list) =))
+;(cost (_ 24 '(1 2 3 4 nil + - * / cons eq list) '() =))
+;(cost (_ (church 2) '(1) '(church church1+) church=))
+;(cost (_ (church 2) '(1 church1) '(church church+) church=))
 ;car/cdr atomp, cons eq, If Quote
 ;todo: num-paras/layer fmt rand? glob?
 ;think: (), a, (f a b), (f a (g b c)), ...
 ;ret: (_ data ops n-data [pkrs])
-;data-2: (choose [push data (_)]) ?
+;data-2: (choose [push data (_)]) ?push-diffe
 (def/va
   (gotcha [tar 24] [data '(0. 1 2 3 4 5 6 7 8 9 nil T F)]
     [ops '(+ - * / eq cons)] [= =] [packers '(list rlist)] )    
-  (setq *paths* nil) ;
+  (setq *paths* nil) ;clean
   (letn ;
     ( [a (choose data)] ;n-data-max
       [b (choose data)]
@@ -3267,7 +3287,7 @@ to-test:
 ; on lisp
 
 ;
-(def/va (choose xs) ;[*paths* nil]) ;? ;syt: fail
+(def/va (choose% xs) ;[*paths* nil]) ;? ;syt: fail
   (define [~ choices] ;choose
     (if [nilp choices]
       [fail]
@@ -3294,6 +3314,34 @@ to-test:
   ) ) ) ) ) )
   [~ xs]
 )
+
+(def/va (true-choose xs) ;2x@
+  (define [~ choices] ;choose    
+    (call-with-current-continuation
+      (lambda [cc]
+        (setq *paths*
+          (append *paths* ;!?X
+            (map
+              (lam (choice)
+                (lam () [cc choice]) )
+              choices
+        ) ) )
+        (fail)
+  ) ) )
+  ;(def fail nil)
+  (call-with-current-continuation ;
+    (lambda [cc]
+      (setq fail ;
+        (lambda ()
+          (if (nilp *paths*)
+            [cc F] ;failsym
+            (let ([p1 (car *paths*)])
+              [setq *paths* (cdr *paths*)]
+              (p1) ;
+  ) ) ) ) ) )
+  [~ xs]
+)
+
 
 (def (infix->prefix xs)
   (def(_ ret xs)
@@ -4709,16 +4757,25 @@ to-test:
 
 ;todo: Dijkstra
 
-(define (memoize proc)
+; (defun memorize (fn) ;f.xs
+  ; (let ([cache (make-hash-table :test eql)]) ;
+    ; (lambda args
+      ; (multiple-value-bind (val win) (gethash args cache) ;
+        ; (if win val
+          ; (setf (gethash args cache) ;
+            ; (apply fn args)
+; ) ) ) ) ) )
+
+(def (memorize-fx proc) ;memorize-fx
   (let ([cache '()])
-    (lambda (x) ;
+    (lam (x) ;
       (cond
         [(assq x cache) => cdr] ;(call cdr resl)
-        [else
-          (let ([ans (proc x)])
-            (set! cache (cons(cons x ans)cache))
+        (else
+          (let ([ans (proc x)]) ;
+            [set! cache (cons (cons x ans) cache)] ;
             ans
-) ] ) ) ) )
+) ) ) ) ) )
 
 ;;; standard prelude @
 
