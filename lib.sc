@@ -6,6 +6,9 @@
 
   - Update notes:
     - 1.99
+      - H add : replaces, (str-repls "asd.\nsdf.dfg" '["\n" "."] '["" " . "]) -> "asd . sdf . dfg"
+      - h upd : get-file-var ...
+      - G upd : divide
       - F add : true-choose, str-trim-all
       - e upd : defination of choose -> choose%
       - D upd : case (compose); fix : gotcha;
@@ -2007,15 +2010,27 @@ to-test:
   (conz xs z) ;a bit faster than above
 )
 
-;(key->val '([a 1][b 2]) 'a)
+;(key->val '([a 1][b 2][c]) 'c)
 (def/va (key->val xz x [= eql] [f-case id]) ;
   (def (_ xz)
     (if (nilp xz) x ;nil
       (let ([xs (car xz)] [yz (cdr xz)])
-        (if [= (f-case x) (car xs)] ;case? need case maybe
-          (cadr xs)
+        (if [= (f-case x) (car xs)] ;
+          [if (cdr-nilp xs) nil (cadr xs)] ;
           [_ yz]
   ) ) ) )
+  (_ xz)
+)
+;(val->key '([a 1][b 2][c]) '3)
+(def/va (val->key xz x [= eql] [f-case id]) ;
+  (def (_ xz)
+    (if (nilp xz) x
+      (let ([xs (car xz)] [yz (cdr xz)]) ;hlp _ ~
+        (if (cdr-nilp xs) x ;
+          (if [= (f-case x) (cadr xs)] ;
+            (car xs) ;
+            [_ yz]
+  ) ) ) ) )
   (_ xz)
 )
 
@@ -2394,21 +2409,26 @@ to-test:
   (_ ls nil ORI times T)
 )
 
-;(replaces '(x x s s a) '(x s) '(y z))
-;(replaces '(x x x s s a) '(x x s) '(y z))
-;todo (replaces '(x x s s a) '([x s][s a]) '([y][z]))
-(def (replaces ls xs ys) ;%
-  (def (_ l ret)
+;X (replaces '(x x x s s a) '(x x s) '(y z))
+;(replaces '(x x s s a) '([x s][s a]) '([y][z]))
+;(replaces '(z a b a d a b c a c b c) '([a b][a c][b c]) '([X][Y Z][])) ;~> '(z X a d X c Y Z)
+(def (replaces xs TZ YZ)
+  (def (~  tmp ts  xs tz  yz)
     (if~
-      [nilp  l] ret
-      [consp l]
-        (cons [_ (car l) nil] [_ (cdr l) ret])
-      (let ([n (nth-of l xs)])
-        (if n
-          (nth ys n)
-          l
-  ) ) ) )
-  (_ ls nil)
+      [nilp ts] ;~ eql
+        (append (car yz) (~ nil (car TZ) xs (cdr TZ) YZ)) ;
+      (if [nilp xs] ;ret
+        tmp ;(append tmp ret)
+        (let/ad xs
+          (if~
+            [eq a (car ts)] ;eq
+              (~ (cons a tmp) (cdr ts) d tz yz)
+            [nilp tz] ;~ !eql
+              (cons a (append tmp (~ nil (car TZ) d (cdr TZ) YZ))) ;
+            (let ([tza(car tz)] [tzd(cdr tz)] [yzd(cdr yz)])
+              (~ nil tza (append tmp xs) tzd yzd) ;!eq
+  ) ) ) ) ) )
+  (~ nil (car TZ) xs (cdr TZ) YZ) ;
 )
 
 ;(exist? '(y a a a s x) '(a a s))
@@ -2490,6 +2510,11 @@ to-test:
 ; (def (str-repl% chs csx csy)
   ; (list->str (list-replace chs csx csy )) ;str is slow
 ; )
+;(str-repls "asd.\nsdf.dfg" '["\n" "."] '["" " . "]) ;~> "asd . sdf . dfg"
+(def/va (str-repls st ss ts) ;
+  (let ([conv str->list] [deconv list->str])
+    [deconv (redu (curry replaces [conv st]) [map (curry map conv) (list ss ts)])] ;
+) )
 
 (def (str-exist? ss st)
   [exist? (str->list ss) (str->list st)]
@@ -4075,12 +4100,17 @@ to-test:
 
 ;(get-file-var "product" "info.txt") ;[] (path/gnu->win "things/special/product/info.txt")
 ;= \r\n , 
-(def/va (get-file-var s-var s-file [line-sep "\n"]) ;how about zhcn? ;\r\n
-  (let ([cont (load-file s-file)]) ;
-    (key->val
-      (map [compose (rcurry str-divide "=") str-trim-head]
-        [str-divide cont line-sep] ) ;if win
+;[rev? F]
+(def/va (get-file-var s-var s-file [case? T] [line-sep "\n"] [rev? F]) ;how about zhcn? ;\r\n
+  (letn
+    ( [conv (if case? id str-downcase)]
+      [f (if rev? val->key key->val)]
+      [cont (conv (load-file s-file))]) ;
+    (f ;
+      (map [compose (rcurry str-divide "=") str-trim-head] ;
+        [str-divide cont line-sep] ) ;if win ;down?
       s-var eql
+      conv ;
 ) ) )
 
 ;(file/string ss {num 1} [s-path "."] [case? T] [show-ori-when-fail? T] [chk-ext ] [tar-format id])
@@ -4796,15 +4826,16 @@ to-test:
   [deep-rev (_ nil nil xs mark)]
 )
 
-;(divide '(x m k m y m k z o) '(m k)) ;~> '([x] [y] [z o])
+;(divide '(x y m k) '(m k))
+;(divide '(x m k m y m k z o) '(m k)) ;~> '([x] [m y] [z o])
 ;seps: (divides '(x m k m o y m k z o) '[(m k) (o)]) ;~> '([x][m][y][z][])
 (def (divide xs sep)
   (def (_ ret elem tmp xs ys) ;
     (if~
-      (nilp xs) ;atomp
-        (cons (append tmp elem) ret) ;~append
       (nilp ys)
         [_ (cons elem ret) nil nil xs sep]
+      (nilp xs) ;atomp
+        (cons (append tmp elem) ret) ;~append
       (let ([ax (car xs)] [dx (cdr xs)] [ay (car ys)] [dy (cdr ys)]) ;
         (if (eq ax ay) ;
           [_ ret elem (cons ax tmp) dx dy] ;
@@ -5135,7 +5166,7 @@ to-test:
 (setq *tab/jp/key-a-A* ;Xy: y: a i u e o ;z: n
  '( [  a あ ア][  i い イ][  u う ウ][  e え エ][  o お オ] ;ェ
     [ ka か カ][ ki き キ][ ku く ク][ ke け ケ][ ko こ コ] 
-    [ sa さ サ][shi し シ][ su す ス][ se せ セ][ so そ ソ] ;shi/si?
+    [ sa さ サ][shi し シ][ su す ス][ se せ セ][ so そ ソ]
     [ ta た タ][chi ち チ][tsu つ ツ][ te て テ][ to と ト] 
     [ na な ナ][ ni に ニ][ nu ぬ ヌ][ ne ね ネ][ no の ノ] 
     [ ha は ハ][ hi ひ ヒ][ fu ふ フ][ he へ ヘ][ ho ほ ホ] ;*
@@ -5151,15 +5182,19 @@ to-test:
     [ pa ぱ パ][ pi ぴ ピ][ pu ぷ プ][ pe ぺ ペ][ po ぽ ポ]
     ;--- extra
     [ si し シ]
-    [ ti ち チ][ tu つ ツ]
+    [ ti ち チ][ tu つ ツ][chu つ ツ]
     [ hu ふ フ]
     [ ji じ ジ]
 ) )
 
-(setq aud/doremi
+(setq aud/doremi ;[pow 2 1/12] ~< 1.06
   '(
-    [256 288 320 1024/3 384 1280/3 480] ;Hz
-    ;512? pre*2
+    ;# : do/ re/, ...
+    ;_.: do. re., fa. so. la.
+    ;._: .re .mi, ...
+    ;(256 271 287 304 323 342 362 384 406 431 456 483 512) ;Hz
+    ;[256.0 271.2 287.4 304.4 322.5 341.7 362.0 383.6 406.4 430.5 456.1 483.3] ;flo?
+    [256.0  287.4  322.5 341.7  383.6  430.5  483.3]
 ) )
 
 ; logic for data
