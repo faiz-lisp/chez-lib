@@ -6,6 +6,8 @@
 
   - Update notes:
     - 1.99
+      - I add : strcat/sep-per flow load-binary-file
+      - i Upd : (save-file cont file [codec "utf-8"])
       - H add : replaces, (str-repls "asd.\nsdf.dfg" '["\n" "."] '["" " . "]) -> "asd . sdf . dfg"
       - h upd : get-file-var ...
       - G upd : divide
@@ -139,7 +141,6 @@
     - rev!
     - seems that newlisp call scheme and c will be more free.
     - to optimize
-      - replaces
     - to fix
       - save-file
       - replace
@@ -2275,6 +2276,19 @@ to-test:
   (trim-head-n (trim-tail-n xs ts) ts)
 )
 
+;(flow sym->str str-downcase str->sym)
+(def (flow . fs)
+  (flow% fs) ;
+)
+(def (flow% fs) ;% ev?
+  (def (_ ret gs)
+    (if [nilp gs] ret ;
+      (_ [lam (x) ((car gs) (ret x))] ;?
+        (cdr gs)
+  ) ) )
+  (_ id fs) ;
+)
+
 ;
 
 (defn list/nth- (xs) ;list->nth~ xs
@@ -2409,25 +2423,28 @@ to-test:
   (_ ls nil ORI times T)
 )
 
-;X (replaces '(x x x s s a) '(x x s) '(y z))
 ;(replaces '(x x s s a) '([x s][s a]) '([y][z]))
 ;(replaces '(z a b a d a b c a c b c) '([a b][a c][b c]) '([X][Y Z][])) ;~> '(z X a d X c Y Z)
+;do (_ xs '([(a s)(s d)][(d f)]) '([Z X][]))
+;do (replaces '(x x s s a) '([x s][s a]) '()) ;~> T
 (def (replaces xs TZ YZ)
-  (def (~  tmp ts  xs tz  yz)
+  (def (~ tmp ts  xs tz  yz)
     (if~
       [nilp ts] ;~ eql
-        (append (car yz) (~ nil (car TZ) xs (cdr TZ) YZ)) ;
-      (if [nilp xs] ;ret
-        tmp ;(append tmp ret)
-        (let/ad xs
-          (if~
-            [eq a (car ts)] ;eq
-              (~ (cons a tmp) (cdr ts) d tz yz)
-            [nilp tz] ;~ !eql
-              (cons a (append tmp (~ nil (car TZ) d (cdr TZ) YZ))) ;
-            (let ([tza(car tz)] [tzd(cdr tz)] [yzd(cdr yz)])
-              (~ nil tza (append tmp xs) tzd yzd) ;!eq
-  ) ) ) ) ) )
+        (append (car yz)
+          [~ nil (car TZ) xs (cdr TZ) YZ] ) ;
+      [nilp xs] ;ret
+        tmp
+      (let/ad xs
+        (if~
+          [eq a (car ts)] ;eq
+            (~ (cons a tmp) (cdr ts) d tz yz)
+          [nilp tz]       ;~ !eql
+            (cons a
+              (append tmp [~ nil (car TZ) d (cdr TZ) YZ]) ) ;
+          (let ([tza (car tz)] [tzd (cdr tz)] [yzd (cdr yz)])
+            (~ nil tza (append tmp xs) tzd yzd) ;!eq
+  ) ) ) ) )
   (~ nil (car TZ) xs (cdr TZ) YZ) ;
 )
 
@@ -2564,6 +2581,19 @@ to-test:
 (def/va (str/sep-chars ss [seps '(#\x0)]) ;[encry (rcurry str/sep-chars '(#\x0))]
   [list->str (list/seps (str->list ss) seps)] ;
 )
+
+;(strcat/sep-per (xn->list "asd" 10) "\n" 3)
+(def (strcat/sep-per ss sep per)
+  (def (_ ret xs i)
+    (if [nilp xs] ret
+      (let/ad xs
+        (if (eq i per) ;
+          [_ (strcat ret sep a) d 1]
+          [_ (strcat ret a) d (1+ i)]
+  ) ) ) )
+  (if [nilp ss] ""
+    [_ (car ss) (cdr ss) 1]
+) )
 
 ; shell
 
@@ -3943,6 +3973,18 @@ to-test:
 
 ; file: load-file-cont-as-str
 
+;(file-name "c:/my.path/file.ex.ext") -> file.ex
+;(file-name "file.ex") -> file
+(def (file-name s-file)
+  (letn
+    ( [file (last [str-divides s-file '("/" "\\")])]
+      [tmp (str-divide file ".")] ;
+      [d   (cdr tmp)] )
+    (if (eql file "") nil
+      (if [nilp d] tmp
+        [strcat/sep (rcdr tmp) "."] ;(str-repl st ss sd n rev?)
+) ) ) )
+
 ;(file-ext "c:/my.path/file") -> nil ;/ \\
 (def (file-ext s-file)
   (letn
@@ -3962,17 +4004,7 @@ to-test:
         (loop (cons c lst) (read-char p))
 ) ) ) )
 
-; (def (read-file file) ;read-bin-file->bytevector/u8-list/char-list/string
-  ; (let*
-    ; ( ;[tx (make-transcoder (iconv-codec "gbk") (eol-style crlf) (error-handling-mode replace))] ;?
-      ; [p  (open-file-input-port file (file-options no-fail) (buffer-mode block) #f)] ;F <~ tx
-      ; [getter get-bytevector-all] ;<~ read-char
-      ; [ret (getter p)] )
-    ; (close-input-port p)
-    ; (list->str (map int->char (bytevector->u8-list ret))) ;
-; ) )
-
-(def/va (load-file file [codec "utf-8"])
+(def/va (load-file file [codec "utf-8"]) ;
   (let*
     ( [tx (make-transcoder [iconv-codec codec] (eol-style crlf) (error-handling-mode replace))] ;
       [p  (open-file-input-port file (file-options no-fail) (buffer-mode block) tx)] ;F <~ tx
@@ -3986,11 +4018,40 @@ to-test:
     [list->str (_ nil)]
 ) )
 
-(def (save-file cont file) ;
-  [if (file-exists? file) (delete-file file)] ;
+(def (load-bin-file file) ;read-bin-file->bytevector/u8-list/char-list/string
+  (let*
+    ( ;[tx (make-transcoder (iconv-codec "gbk") (eol-style crlf) (error-handling-mode replace))] ;?
+      [p  (open-file-input-port file (file-options no-fail) (buffer-mode block) #f)] ;F <~ tx
+      [getter get-bytevector-all] ;<~ read-char
+      [ret (getter p)] ) ;
+    (close-input-port p)
+    ;(list->str (map int->char 
+      (bytevector->u8-list ret)
+    ;) ) ;
+) )
+;(u8-list->bytevector (map char->int (str->list 
+
+(def (save-file0 cont file) ;
+  [if (file-exists? file) (delete-file file)]
   (let ([of (open-output-file file)]) ;
-    (write cont of) ;?
+    (write cont of) ;"asd\ndsa\n" print-to-file ?
     (close-port of)
+) )
+
+(def/va (save-file cont file [codec "utf-8"]) ;
+  [if (file-exists? file) (delete-file file)]
+  (let*
+    ( [tx (make-transcoder [iconv-codec codec] (eol-style crlf) (error-handling-mode replace))] ;
+      [p  (open-file-output-port file (file-options no-fail) (buffer-mode block) tx)] ;
+      [writer write-char] )
+    (def (_ xs)
+      (if (nilp xs)
+        (bgn (close-output-port p)) ;
+        (let/ad xs ;textual, else put-char
+          (writer a p)
+          [_ d]
+    ) ) )
+    (_ [str->list cont])
 ) )
 
 ;(ls (cwd))
