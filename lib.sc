@@ -6,6 +6,7 @@
 
   - Update notes:
     - 1.99
+      - J add : replace%, str-repl%
       - I add : strcat/sep-per flow load-binary-file
       - i Upd : (save-file cont file [codec "utf-8"])
       - H add : replaces, (str-repls "asd.\nsdf.dfg" '["\n" "."] '["" " . "]) -> "asd . sdf . dfg"
@@ -2423,6 +2424,29 @@ to-test:
   (_ ls nil ORI times T)
 )
 
+;(~ xs '([t1 ..][t2 ..]) '(ys ..))
+;(replace% '(z a b a d a b c a c b c) '([a b][a c][b c]) '(Y Z)) ;-> '(z Y Z a d Y Z c Y Z Y Z)
+(def (replace% xs TZ ys)
+  (def (_ tmp ts xs tz)
+    (if~
+      [nilp ts] ;~ eql
+        (append ys
+          [_ nil (car TZ) xs (cdr TZ)] )
+      [nilp xs] ;ret
+        tmp
+      (let/ad xs
+        (if~
+          [eq a (car ts)] ;eq
+            (_ (cons a tmp) (cdr ts) d tz)
+          [nilp tz] ;~ !eql
+            (cons a
+              (append tmp [_ nil (car TZ) d (cdr TZ)]) )
+          (let ([tza (car tz)] [tzd (cdr tz)])
+            (_ nil tza (append tmp xs) tzd) ;!eq
+  ) ) ) ) )
+  (_ nil (car TZ) xs (cdr TZ)) ;
+)
+
 ;(replaces '(x x s s a) '([x s][s a]) '([y][z]))
 ;(replaces '(z a b a d a b c a c b c) '([a b][a c][b c]) '([X][Y Z][])) ;~> '(z X a d X c Y Z)
 ;do (_ xs '([(a s)(s d)][(d f)]) '([Z X][]))
@@ -2519,6 +2543,12 @@ to-test:
 )
 
 ; string
+
+;(str-repl% "adssadas.ds.ad" '("ad" "s.") "X")
+(def/va (str-repl% s0 sz s2)
+  (let ([conv str->list] [deconv list->str])
+    [deconv (replace% [conv s0] [map conv sz] [conv s2])]
+) )
 
 (def/va (str-repl ss sx sy [num -1]) ;~ ;(redu str-repl% [map str->list (list ss sx sy)])
   (list->str
