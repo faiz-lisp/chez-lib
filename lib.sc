@@ -1,3 +1,4 @@
+
 (define (version) "Chez-lib v1.99") ;
 (define (git-url) "https://gitee.com/faiz-xxxx/chez-lib.git")
 
@@ -6,17 +7,18 @@
 
   - Update notes:
     - 1.99
+      - K add : save-bin-file
+      - k fix : evs via: readexp -> read-expr
       - J add : replace%, str-repl%
       - I add : strcat/sep-per flow load-binary-file
       - i Upd : (save-file cont file [codec "utf-8"])
-      - H add : replaces, (str-repls "asd.\nsdf.dfg" '["\n" "."] '["" " . "]) -> "asd . sdf . dfg"
-      - h upd : get-file-var ...
+      - h add : replaces, str-repls, get-file-var ...
       - G upd : divide
       - F add : true-choose, str-trim-all
       - e upd : defination of choose -> choose%
       - D upd : case (compose); fix : gotcha;
       - d add : church, church-
-      - C add : choose, *paths*, rlist..., gotcha
+      - C add : choose, *paths*, rlist...
       - B upd : files/cont
       - a add : (collect 10 (do-sth))
       - : add : int<->str/system, digit<->char, global vars
@@ -24,8 +26,6 @@
       - Z add : separa, strcat/sep
       - X add : str-divides, file-ext, str/sep-chars
       - W add : str-exist?
-      - v upd : conz, id
-      - T upd : get-file-var
       - S add : load-file
       - r add : key->val xz x
       - Q add : (divide-after '(x m k y m k z) '(m k)) ~> '([x m k] [y m k] [z]); divide; str-divide
@@ -34,7 +34,6 @@
       - o add : range/total
       - n add : (fixnum 1/1.2);\n upd : (sleep 1.0);
       - I add : make-file, make-path
-      - H upd : str-repl;\n add : replaces ;
       - E upd : add list/sep
       - C add : (list/seps '(1 2 3) '(4 5)) ~> '(1 4 5 2 4 5 3)
       - B Add : (lam/lams ([(a) b] c . xs) [append (list a b c) xs])
@@ -43,7 +42,6 @@
       - w Add : (deep& rev char-downcase '((#\a #\s) #\D)) ~> '(#\d (#\s #\a))
       - v Add : (deep-exist-match? [lam (x) (cn-char? x)] '((#\我) #\3)) ~> T
       - Q Add : (trim '(1 2 1 2 1 3 1 2) '(1 2)) ~> '(1 3)
-      - P upd : upd : (str/sep " " 123 456), (str/sep% "-" '(123 "456"))
       - O upd : (beep [456] [500]);\nadd : getcwd;
       - N add : def-ffi, shell-execute
       - L fix : for: map -> for-each; upd : tail=list-tail; add : tail%
@@ -51,7 +49,7 @@
       - c Add : htab-:kvs,keys,values
       - : Add : (doc-ls co) -> documentable-keys -> '(cons cond); house keeping;
     - 1.96z upd : def/doc, doc; Added doc-paras;
-    - 1.96: Add : def/doc, (doc myfunc1), docs
+    - 1.96: Add : docs
     - 1.95c Upd : ./
     - 1.95: Add : fold (_ f x xs), foldl-n (_ n fn xs), infix->prefix (_ xs)
     - 1.94: Add : self-act (_ pow 2 3) => (pow 2 2 2), rev-calc (_ pow 4) => 2
@@ -2447,11 +2445,9 @@ to-test:
   (_ nil (car TZ) xs (cdr TZ)) ;
 )
 
-;(replaces '(x x s s a) '([x s][s a]) '([y][z]))
 ;(replaces '(z a b a d a b c a c b c) '([a b][a c][b c]) '([X][Y Z][])) ;~> '(z X a d X c Y Z)
-;do (_ xs '([(a s)(s d)][(d f)]) '([Z X][]))
-;do (replaces '(x x s s a) '([x s][s a]) '()) ;~> T
-(def (replaces xs TZ YZ)
+;do (_ xs '([(a s)(s d)][(d f)]) '([Z X][]) )
+(def (replaces xs TZ YZ) ;
   (def (~ tmp ts  xs tz  yz)
     (if~
       [nilp ts] ;~ eql
@@ -2865,7 +2861,7 @@ to-test:
     (read p)
 ) )
 
-(def (evs . xs) [ev (redu readexp xs)])
+(def (evs . xs) [ev (redu read-expr xs)])
 
 (defn chars-replace-x (cs x xx)
   (defn _ (cs x xx ret)
@@ -4059,7 +4055,16 @@ to-test:
       (bytevector->u8-list ret)
     ;) ) ;
 ) )
-;(u8-list->bytevector (map char->int (str->list 
+;(u8-list->bytevector (map char->int (str->list
+
+(def/va (save-bin-file cont file)
+  [if (file-exists? file) (delete-file file)]
+  (letn
+    ( [p  (open-file-output-port file (file-options no-fail) (buffer-mode block) F)]
+      [writer put-bytevector] ) ;-some?
+    (writer p [u8-list->bytevector cont]) ;string->bytevector
+    (close-output-port p)
+) )
 
 (def (save-file0 cont file) ;
   [if (file-exists? file) (delete-file file)]
@@ -4068,20 +4073,21 @@ to-test:
     (close-port of)
 ) )
 
-(def/va (save-file cont file [codec "utf-8"]) ;
+(def/va (save-file cont file [codec "utf-8"]) ;[bin? F])
   [if (file-exists? file) (delete-file file)]
   (let*
-    ( [tx (make-transcoder [iconv-codec codec] (eol-style crlf) (error-handling-mode replace))] ;
+    ( (tx ;(if bin? F
+        [make-transcoder [iconv-codec codec] (eol-style crlf) (error-handling-mode replace)] ) ;) ;
       [p  (open-file-output-port file (file-options no-fail) (buffer-mode block) tx)] ;
-      [writer write-char] )
+      [writer write-char] ) ;put-bytevector/-some
     (def (_ xs)
       (if (nilp xs)
         (bgn (close-output-port p)) ;
-        (let/ad xs ;textual, else put-char
+        (let/ad xs ;textual, else put-char?
           (writer a p)
           [_ d]
     ) ) )
-    (_ [str->list cont])
+    (_ [str->list cont]) ;
 ) )
 
 ;(ls (cwd))
@@ -4837,28 +4843,32 @@ to-test:
 ;(find-htab-key htab value  [eql])
 ;(find-htab-keys htab value [eql])
 
-
-(defn_ exist-cond? (g x xs)
-  (if (nilp xs) *f ;<-nil
-    (let ([a (car xs)])
-      (if (g x a) *t
-        [_ g x (cdr xs)]
+(def_ [exist-cond? g x xs] ;
+  (if (nilp xs) F ;
+    (let/ad xs
+      (if (g x a) T
+        [_ g x d]
 ) ) ) )
-(defn_ exist-relate? (g xs)
-  (if (nilp xs) *f
-    (let ([b (exist-cond? g (car xs) (cdr xs))])
-      (if b *t
-        [_ g (cdr xs)]
+
+(def_ [exist-relation?/adjacent g xs] ;
+  (if (nilp xs) F
+    (letn
+      ([d (cdr xs)] [b (exist-cond? g (car xs) d)])
+      (if b T
+        [_ g d]
 ) ) ) )
 
 ;(alias defnest defn-nest)
 
 (def (exist-match? g xs)
   (def (_ xs)
-    (if (nilp xs) Fal
-      (if (g (car xs)) Tru ;
-        [_ (cdr xs)]
-  ) ) )
+    (if~
+      [nilp xs]
+        F
+      [g (car xs)]
+        T ;
+      [_ (cdr xs)]
+  ) )
   (_ xs)
 )
 
