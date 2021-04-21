@@ -7,6 +7,7 @@
 
   - Update notes:
     - 1.99
+      - L add : elem-freq, mem?-and-do
       - K add : save-bin-file
       - k fix : evs via: readexp -> read-expr
       - J add : replace%, str-repl%
@@ -437,19 +438,6 @@ Code:
       #'(if% [bd ...] []) ;
       ;#'[sy-redu cond (group (bd ...) 2)] ;sy-group
 ) ) )
-
-; (def-syt (if~ stx) ;? ?: cond->if
-  ; (syt-case stx (else) ;nil?
-    ; ([_ k d]
-    ; #'(if k d) )
-    ; ([_ k d e]
-    ; #'(if k d e) )
-    ; ([_ k d else e]
-    ; #'(if k d e) )
-    ; ([_ k d bd ...] ;#'(cond (k d) bd ...)
-    ; #'(if k d
-        ; (if~ bd ...) )
-; ) ) )
 
 (defsyt defun
   ( [_ f args ...]
@@ -2117,7 +2105,7 @@ to-test:
 (defn ~remov-same (xs) ;@
   (def (_ xs ts)
     (if (nilp xs) ts
-      (let ([a(car xs)] [d(cdr xs)])
+      (let/ad xs
         (if (mem? a ts) ;
           [_ d ts]
           [_ d (cons a ts)] ;
@@ -2743,11 +2731,11 @@ to-test:
 (def (call g . xs) (redu g xs)) ;
 (def (rcall% g . xs) (redu g (rev xs)))
 
-(def/va (member?% x xs [= eql])
+(def/va (member?% x xs [= eql] [get id]) ;'([][])
   (def (_ xs)
     (if~
       [nilp xs] F
-      [= x (car xs)] T ;
+      [= x [get (car xs)]] xs ;
       (_ (cdr xs))
   ) )
   (_ xs)
@@ -3143,6 +3131,40 @@ to-test:
       (cons f ([ev p1] a (cons g (list b c)))) ;exp
       (fail) ;
 ) ) )
+
+(def/va (mem?-and-do x xs [= eql] [get id] [f-x id]) ;
+  (def (_ ret xs)
+    (if~
+      [nilp xs] F
+      (let/ad xs
+        (if
+          [= x [get a]]
+            (append [rev ret] (cons [f-x a] d)) ;
+          (_ [cons a ret] d)
+  ) ) ) )
+  (_ nil xs)
+)
+
+;(elem-freq% '(1 2 23 123 2 1 323 2 1 2))
+(def/va (elem-freq% xs [= eq]) ;~
+  (def (_ ens xs)
+    (if [nilp xs] ens
+      (let/ad xs ;mem?-and-do a xs eq car do
+        (letn
+          ( [do-sth (lam (xs) (do-for xs [lam(xs)(1+ (cadr xs))] [lam(xs x)(list (car xs) x)]))]
+            [tmp (mem?-and-do a ens = car do-sth)] ) ;
+          (if tmp
+            [_ tmp d]
+            [_ (cons [list a 1] ens) d] ;rev
+  ) ) ) ) )
+  [_ nil xs]
+)
+
+(def (elem-freq xs)
+  (qsort ; (compress (qsort xs stru<))
+    (elem-freq% xs eq)
+    [lam (x y) (> (cadr x) (cadr y))]
+) )
 
 ; math
 
@@ -4764,7 +4786,6 @@ to-test:
     (map car ht)
 ) )
 
-
 ; htab 2 for hashtable
 
 (def (htab/key-exist? key ht)
@@ -5382,7 +5403,3 @@ to-test:
     ; map #3%map
     ; +   #3%+
 ) )
-
-#|
-```
- ;=== END === |#
