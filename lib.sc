@@ -7,6 +7,8 @@
 
   - Update notes:
     - 1.99
+      - L add : demo play-piano; upd : key->val ...
+      - l repl: Tru/Fal -> T/F
       - L add : elem-freq, mem?-and-do
       - K add : save-bin-file
       - k fix : evs via: readexp -> read-expr
@@ -33,6 +35,7 @@
       - p Upd : (lisp nil) ~> F
       - O add : path operations and grep
       - o add : range/total
+      - n add : (fixnum 1/1.2);\n upd : (sleep 1.0);
       - n add : (fixnum 1/1.2);\n upd : (sleep 1.0);
       - I add : make-file, make-path
       - E upd : add list/sep
@@ -1505,8 +1508,8 @@ to-test:
 (def    spc  " ")
 (define Void *v)
 (define Err  *v) ;
-(define Tru  *t)
-(define Fal  *f)
+(define T  *t)
+(define F  *f)
 
 ;
 
@@ -1595,12 +1598,12 @@ to-test:
 ) ;)
 
 (def (ok? x)
-  (if [or (nilp x) (fal? x)] Fal
-    Tru
+  (if [or (nilp x) (fal? x)] F
+    T
 ) )
 
-(def [please-return!] (setq *will-ret* Tru))
-(def [dont-return!]   (setq *will-ret* Fal))
+(def [please-return!] (setq *will-ret* T))
+(def [dont-return!]   (setq *will-ret* F))
 
 (def (return x)
   (if *will-ret* x
@@ -1976,7 +1979,7 @@ to-test:
 (defn nth-of-x (x db)
   (let ([g (eq/eql x)])
     (def (_ db n)
-      (if (nilp db) Fal
+      (if (nilp db) F
         (if [g (car db) x] n
           (_ (cdr db) (fx1+ n))
     ) ) )
@@ -1999,9 +2002,10 @@ to-test:
 )
 
 ;(key->val '([a 1][b 2][c]) 'c)
-(def/va (key->val xz x [= eql] [f-case id]) ;
+(def/va (key->val xz x [= eql] [f-case id] [defa? F] [defa nil])
   (def (_ xz)
-    (if (nilp xz) x ;nil
+    (if (nilp xz)
+      (if defa? defa x)
       (let ([xs (car xz)] [yz (cdr xz)])
         (if [= (f-case x) (car xs)] ;
           [if (cdr-nilp xs) nil (cadr xs)] ;
@@ -2077,8 +2081,8 @@ to-test:
 
 (def (flat-list-include ys0 xs0)
   (def (_ ys xs)
-    (if (nilp xs) Tru
-      (if (nilp ys) Fal
+    (if (nilp xs) T
+      (if (nilp ys) F
         (let ([dy (cdr ys)])
           (if [eq (car xs) (car ys)]
             [_ dy (cdr xs)]
@@ -2119,7 +2123,7 @@ to-test:
       ;(def (remov-1?/g x xs g) ;result / #f
       (call/cc (lam [k]
           (def (_ xs)
-            (if (nilp xs) [k Fal]
+            (if (nilp xs) [k F]
               (let ([a(car xs)] [d(cdr xs)])
                 (if (eql a x) d
                   (cons a [_ d])
@@ -2492,9 +2496,42 @@ to-test:
       (cons a [_ d])
 ) ) )
 
+; todo: 1层压缩 -> 全压缩
+(def/va (compress% x n xs [= eq])
+  (def (_ xs x n)
+    (if (nilp xs)
+      (list [list x n]) ;
+      (let/ad xs 
+        (if (= x a) ;
+          (_ d x (1+ n))
+          (cons [list x n] (_ d a 1))
+  ) ) ) )
+  (_ xs x n)
+)
+(def/va (compress xs [= eq]) ;
+  (if (nilp xs) nil
+    (compress% (car xs) 1 (cdr xs) =)
+) )
+;test: '(1 2 3 1 2 3 4)
+;weak when '(1 3 4 6 2) ;all diffe
+
+;(_ '(1 2 1 2 3 0 1 2 3)) ;-> 1 2 3 -> '(([1 2 3] 2) ([1 2] 1) ([0] 1))
+
 ;elap cant print ""
 
 ; number
+
+(def [int n] ;
+  (def (_ n)
+    (if (number? n)
+      (if~
+        [inexact? n] (float->fix n)
+        [int? n]     n
+        [_ (inexa n)] )
+      n ;
+  ) )
+  (_ n)
+)
 
 ;num<->char num/char
 (def (digit->char x)
@@ -3137,15 +3174,14 @@ to-test:
     (if~
       [nilp xs] F
       (let/ad xs
-        (if
-          [= x [get a]]
-            (append [rev ret] (cons [f-x a] d)) ;
+        (if [= x [get a]]
+          (append [rev ret] (cons [f-x a] d)) ;
           (_ [cons a ret] d)
   ) ) ) )
   (_ nil xs)
 )
 
-;(elem-freq% '(1 2 23 123 2 1 323 2 1 2))
+;(elem-freq% '(1 2 2 3 123 2 1 323 2 1 2))
 (def/va (elem-freq% xs [= eq]) ;~
   (def (_ ens xs)
     (if [nilp xs] ens
@@ -3161,7 +3197,8 @@ to-test:
 )
 
 (def (elem-freq xs)
-  (qsort ; (compress (qsort xs stru<))
+  (qsort
+    ;(compress (qsort xs stru<))
     (elem-freq% xs eq)
     [lam (x y) (> (cadr x) (cadr y))]
 ) )
@@ -3195,8 +3232,8 @@ to-test:
 
 (def (xor . xs)
   (def (xor2% a b) ;logical ;(bitwise-xor 1 1 2 2 2 2 3 3 3)
-    (if~ [eq a b] Fal
-      Tru
+    (if~ [eq a b] F
+      T
   ) )
   (redu~ xor2% [map not xs]) ;not issue when: (xor x)
 )
@@ -3251,15 +3288,15 @@ to-test:
 
 (def (not-exist-meet? g xs)
   (def (once ys x)
-    (if (nilp ys) Tru ;
-      (if (g x (car ys)) Fal
+    (if (nilp ys) T ;
+      (if (g x (car ys)) F
         [once (cdr ys) x]
   ) ) )
   (def (_ ys x)
-    (if (nilp ys) Tru ;
+    (if (nilp ys) T ;
       (if (once ys x)
         [_ (cdr ys) (car ys)]
-        Fal
+        F
   ) ) )
   (_ (cdr xs) (car xs))
 )
@@ -3271,8 +3308,8 @@ to-test:
 )
 
 (def (pow-num? x) ;int
-  (if (eq 0 [& x (1- x)]) Tru
-    Fal
+  (if (eq 0 [& x (1- x)]) T
+    F
 ) )
 
 (def (num-end-with num xx) ;int
@@ -3466,19 +3503,19 @@ to-test:
 )
 
 (def (prim-num? n)
-  (if~ (< n 2) Fal
-    (< n 4) Tru
-    (even? n) Fal
-    (< n 9) Tru
-    (fx= 0 (mod n 3)) Fal
+  (if~ (< n 2) F
+    (< n 4) T
+    (even? n) F
+    (< n 9) T
+    (fx= 0 (mod n 3)) F
     (let ([r (sqrt n)]) ;floor?
       (let loop ([f 5]) ;22 25 26
         (if (<= f r) ;
           (if~
-            [fx= 0 (mod n f)]       Fal
-            (fx= 0 [mod n (fx+ f 2)]) Fal
+            [fx= 0 (mod n f)]       F
+            (fx= 0 [mod n (fx+ f 2)]) F
             [loop (fx+ f 6)] )
-          Tru ;
+          T ;
       ) )
 ) ) )
 
@@ -3652,26 +3689,26 @@ to-test:
   ;(_ xs [sort < (filter >0 nths)] 1) ;
   (_ xs nths 1) ;
 )
-(defn permutation (xs) ;(_ n xs-range n0) ;how ab repeating cases?
-  (def (_ r xs ys)
-    (if (nilp xs) r
-      (letn[(a (car xs))
-            (d (cdr xs))
-            (ts (remov-1 a ys)) ;
-            (zss(permutation ts))
-           ]
-        (if (nilp zss) `((,a)) ;
-          (_ (append~ r [map(curry~ cons a)zss]) d ys)
+(def [permutation xs] ;(_ n xs-range n0) ;how ab repeating cases?
+  (def (_ ret xs ys)
+    (if (nilp xs) ret
+      (letn
+        ( [a (car xs)]
+          (d (cdr xs))
+          (ts (remov-1 a ys)) ;
+          [zss (permutation ts)] )
+        (if (nilp zss) `([,a]) ;
+          (_ (append~ ret [map (curry~ cons a) zss]) d ys)
   ) ) ) )
   (_ nil xs xs)
 )
 
-(def (combinations xs n) ;todo [full-combinations/subsets '(1 2)]~>'([1 2][1][2][])
+(def [combinations xs n] ;todo [full-combinations/subsets '(1 2)]~>'([1 2][1][2][])
   (def (_ xs n)
     (if~
       [eq n 0] nil
       [eq n 1] (map list xs)
-      [>= n (len xs)] (li xs) ;
+      [>= n (len xs)] (list xs) ;
       (append~ ;
         [_ (cdr xs) n]
         (map [curry~ cons (car xs)] ;
@@ -3752,13 +3789,13 @@ to-test:
 )
 
 ;(map-all list '(1 2) '(4) '(5 6)) ;~> 4 lists
-(def (map-for-combinations g . xz)
+(def [map-for-combinations g . xz]
   (def (~ ret tmp0 xs0 xz)  
     (def [_ ret tmp xs xz]
       (if (nilp tmp)
         (if (nilp xz)
           (map (curry redu g) ret) ;;~map ~redu
-          (~ nil [rev ret] (car xz) (cdr xz)) ) ;;@
+          [~ nil [rev ret] (car xz) (cdr xz)] ) ;;@
         (if (nilp xs)
           [_ ret (cdr tmp) xs0 xz] ;
           [_ (cons [cons(car xs)(car tmp)] ret) tmp (cdr xs) xz] ;;
@@ -3879,13 +3916,13 @@ to-test:
 ;(cost (fib0 42)) ;realtime = 1.111~1.173 s
 
 (def (fib1 n) ;gmp: (fib 1E) just 1s
-  ;(let ([st(clock)] [1st Fal])
+  ;(let ([st(clock)] [1st F])
     (def_ (fibo1 ret nex n)
       (if (< n 1) ret
         ; (bgn
           ; (if [=0 (%[- (clock) st]100)]
-            ; (when 1st (setq 1st Fal) (echo ".") )
-            ; (setq 1st Tru) )
+            ; (when 1st (setq 1st F) (echo ".") )
+            ; (setq 1st T) )
           [_ nex (+ nex ret) (1- n)]
     ) ) ;)
     (fibo1 0 1 n)
@@ -4013,8 +4050,8 @@ to-test:
   (* x (sigmoid x))
 )
 
-(defn/defa nonlin (x deriv) [Fal] ;
-  (if (eql deriv Tru)
+(defn/defa nonlin (x deriv) [F] ;
+  (if (eql deriv T)
     (* x [- 1 x])
     (sigmoid x)
 ) )
@@ -4593,7 +4630,7 @@ to-test:
 (def (vec-nilp x) ;
   (if [vecp x]
     (=0 (vec-len x))
-    Fal
+    F
 ) )
 ;(def num->lis (curry apply/reducing-num cons)) ;
 (def num->lis iota)
@@ -5309,15 +5346,44 @@ to-test:
     [ ji じ ジ]
 ) )
 
-(setq aud/doremi ;[pow 2 1/12] ~< 1.06
+;doremi-hz
+(setq *doremi-hz* ;[pow 2 1/12] ~< 1.06
   '(
-    ;# : do/ re/, ...
+    ;# : do2 re2, ...
     ;_.: do. re., fa. so. la.
     ;._: .re .mi, ...
     ;(256 271 287 304 323 342 362 384 406 431 456 483 512) ;Hz
-    ;[256.0 271.2 287.4 304.4 322.5 341.7 362.0 383.6 406.4 430.5 456.1 483.3] ;flo?
-    [256.0  287.4  322.5 341.7  383.6  430.5  483.3]
+    256.0 271.2 287.4 304.4 322.5 341.7 362.0 383.6 406.4 430.5 456.1 483.3 ;flo
+    ;[256.0  287.4  322.5 341.7  383.6  430.5  483.3]
 ) )
+
+(setq
+  Mu  1 ;~ > Mute
+  Do  [nth *doremi-hz*  1]   
+  Do2 [nth *doremi-hz*  2]   
+  Re  [nth *doremi-hz*  3]   
+  Re2 [nth *doremi-hz*  4]   
+  Mi  [nth *doremi-hz*  5]   
+  Fa  [nth *doremi-hz*  6]   
+  Fa2 [nth *doremi-hz*  7]   
+  So  [nth *doremi-hz*  8]   
+  So2 [nth *doremi-hz*  9]   
+  La  [nth *doremi-hz* 10]   
+  La2 [nth *doremi-hz* 11]   
+  Si  [nth *doremi-hz* 12] )
+(setq
+  .Do  [(rcurry / 2) Do ]    Do.  [(curry * 2) Do ]
+  .Do2 [(rcurry / 2) Do2]    Do2. [(curry * 2) Do2]
+  .Re  [(rcurry / 2) Re ]    Re.  [(curry * 2) Re ]
+  .Re2 [(rcurry / 2) Re2]    Re2. [(curry * 2) Re2]
+  .Mi  [(rcurry / 2) Mi ]    Mi.  [(curry * 2) Mi ]
+  .Fa  [(rcurry / 2) Fa ]    Fa.  [(curry * 2) Fa ]
+  .Fa2 [(rcurry / 2) Fa2]    Fa2. [(curry * 2) Fa2]
+  .So  [(rcurry / 2) So ]    So.  [(curry * 2) So ]
+  .So2 [(rcurry / 2) So2]    So2. [(curry * 2) So2]
+  .La  [(rcurry / 2) La ]    La.  [(curry * 2) La ]
+  .La2 [(rcurry / 2) La2]    La2. [(curry * 2) La2]
+  .Si  [(rcurry / 2) Si ]    Si.  [(curry * 2) Si ] )
 
 ; logic for data
 
@@ -5343,6 +5409,24 @@ to-test:
     (map chs->sym
       (deep-reverse [~ (sym->chs prono) nil nil F]) ;
 ) ) )
+
+(def (doremi->Hz one)
+  (let ([mapp (list Do Do. Re Re. Mi Fa Fa. So So. La La. Si)]) ;
+    (nth mapp one)
+) )
+
+(def/va (play-hz [freq 456] [ms 200]) ;La2
+  (beep [int freq] ms)
+)
+
+(def/va (play-hz-s hzs [ms 200] [freq? T])
+  (let ([conv (if freq? id doremi->Hz)])
+    (for-each ;
+      (lam [x]
+        (play-hz [conv x] ms) )
+      hzs ;mss
+    ) T
+) )
 
 ;
 
