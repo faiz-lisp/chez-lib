@@ -7,8 +7,8 @@
 
   - Update notes:
     - 1.99
-      - L add : demo play-piano; upd : key->val ...
-      - l repl: Tru/Fal -> T/F
+      - M upd : demo play-piano ...
+      - m repl: Tru/Fal -> T/F
       - L add : elem-freq, mem?-and-do
       - K add : save-bin-file
       - k fix : evs via: readexp -> read-expr
@@ -375,9 +375,13 @@ Code:
 (alias newln newline)
 (alias nil?  null?)
 
-(ali 1st car)
-(ali 2nd cadr)
-(ali 3rd caddr)
+(alias 1st car)
+(alias 2nd cadr)
+(alias 3rd caddr)
+
+(ali No1 car) ;
+(ali No2 cadr)
+(ali No3 caddr)
 (ali elap elapse)
 (ali origin $primitive)
 
@@ -2867,14 +2871,14 @@ to-test:
   (apply echo xs) (newln) ;
 )
 
-(defn read-expr xs ;
+(def [read-expr xs] ;
   (let
     ( (p
         (open-input-string
           (redu~ strcat
-            `("(begin " ,@xs ")") ;
+            `["(begin " ,@xs ")"] ;
     ) ) ) ) ;ign spc between
-    (read p)
+    [read p]
 ) )
 
 ;'((^)(* / %)(+ -))
@@ -2886,7 +2890,7 @@ to-test:
     (read p)
 ) )
 
-(def (evs . xs) [ev (redu read-expr xs)])
+(def (evs . xs) (ev [redu read-expr xs]))
 
 (defn chars-replace-x (cs x xx)
   (defn _ (cs x xx ret)

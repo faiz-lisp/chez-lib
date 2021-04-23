@@ -66,7 +66,7 @@ zxcv m,./
 (def [play-piano]
   (let ~ ([c (read-char)] [scale 0]) ;init
     (if [eq c #\`] nil ;exit
-      (let ([note (key->val key2doremi c eq id T nil)]) ;.
+      (let ([note (key->val *key2doremi* c eq id T nil)]) ;.
         (case c
           [#\t (-= scale 1)] ;++
           [#\y (+= scale 1)]
