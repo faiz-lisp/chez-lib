@@ -7,6 +7,8 @@
 
   - Update notes:
     - 1.99
+      - N add : chooses with [repeat? F]; upd : choose -> with [once? T]
+      - n add : += -=
       - M upd : demo play-piano ...
       - m repl: Tru/Fal -> T/F
       - L add : elem-freq, mem?-and-do
@@ -510,6 +512,24 @@ Code:
     (bgn
       (set! a b)
       (setq c ...) ;
+) ) )
+
+; c
+
+(defsyt +=
+  ( [_ x . xs]
+    (bgn
+      (set! x (+ x . xs))
+      x
+) ) )
+
+;-----------------------------------------
+
+(defsyt -=  
+  ( [_ x . xs]
+    (bgn
+      (set! x (- x [+ . xs])) ;
+      x
 ) ) )
 
 ;
@@ -3170,7 +3190,7 @@ to-test:
     ) ) )
     (if bool
       (cons f ([ev p1] a (cons g (list b c)))) ;exp
-      (fail) ;
+      (fail) ;fail-and-goon
 ) ) )
 
 (def/va (mem?-and-do x xs [= eql] [get id] [f-x id]) ;
@@ -3430,28 +3450,28 @@ to-test:
  
 ; on lisp
 
-;
-(def/va (choose% xs) ;[*paths* nil]) ;? ;syt: fail
-  (define [~ choices] ;choose
-    (if [nilp choices]
+(def/va (choose% xs [once? T]) ;[*paths* nil]) ;? ;syt: fail
+  (def (~ choices) ;choose
+    (if (nilp choices)
       [fail]
       (call-with-current-continuation
-        (lambda [cc]
+        (lam [cc]
           (setq *paths* ;
             (cons
-              (lambda ()
+              (lam ()
                 (cc [~ (cdr choices)]) ) ;
               *paths*
           ) )
-          (car choices)
+          (car choices) ;
   ) ) ) )
   ;(def fail nil)
   (call-with-current-continuation ;
-    (lambda [cc]
+    (lam [cc]
       (setq fail ;
-        (lambda ()
-          (if [nilp *paths*] ;
-            [cc F] ;failsym
+        (lam ()
+          (if (nilp *paths*) ;
+            (if [once?] F (cc F)) ;
+            ;[cc F] ;failsym ;need ano edition that stop when all choices are checked
             (let ([p1 (car *paths*)])
               [setq *paths* (cdr *paths*)]
               (p1) ;
@@ -3459,10 +3479,10 @@ to-test:
   [~ xs]
 )
 
-(def/va (true-choose xs) ;2x@
-  (define [~ choices] ;choose    
+(def (true-choose xs) ;2x@
+  (def [~ choices] ;choose    
     (call-with-current-continuation
-      (lambda [cc]
+      (lam [cc]
         (setq *paths*
           (append *paths* ;!?X
             (map
@@ -3474,9 +3494,9 @@ to-test:
   ) ) )
   ;(def fail nil)
   (call-with-current-continuation ;
-    (lambda [cc]
+    (lam [cc]
       (setq fail ;
-        (lambda ()
+        (lam ()
           (if (nilp *paths*)
             [cc F] ;failsym
             (let ([p1 (car *paths*)])
@@ -3486,6 +3506,16 @@ to-test:
   [~ xs]
 )
 
+(def/va (chooses xs n [once? T] [rep? F])
+  (def (~ ret xs i)
+    (if (> i n) ret
+      (let ([c (choose xs once?)])
+        (~ (cons c ret)
+          (if rep? xs [remov-1 c xs]) ;
+          (1+ i)
+  ) ) ) )
+  (~ nil xs 1) ;seq?
+)
 
 (def (infix->prefix xs)
   (def(_ ret xs)
@@ -3757,14 +3787,15 @@ to-test:
   (_ xs)
 )
 
-(def (group xs m) ;?(= m per) (group '(1 2 3 4 5 6) 3 1)
-  (let ([m (if [eq 0 m] 1 m)]) ;
+;(group '(1 2 3 4 5 6) 3)
+(def [group xs per] ;?(= m per) (group '(1 2 3 4 5 6) 3 1)
+  (let ([m (if [eq 0 per] 1 per)]) ;
     (def (_ ret xs)
       (if (nilp xs) ret
-        (let ([aa (head% xs m)] [dd (tail% xs m)]) ;%
+        (let ([aa (head% xs m)] [dd (tail% xs m)]) ;% ;(head-tail xs m)
           [_ (cons aa ret) dd]
     ) ) )
-    (rev (_ nil xs)) ;
+    (rev [_ nil xs]) ;
 ) )
 
 (def (arb-group xs . ns) ;arbitrarily
@@ -3778,7 +3809,7 @@ to-test:
           [_ xs (car ms) (cdr ms) nil (cons tmp ret)]
           [_ (cdr xs) (1- n) ms (cons(car xs)tmp) ret]
   ) ) ) )
-  [rev(_ xs (car ns) (cdr ns) nil nil)]
+  [rev (_ xs (car ns) (cdr ns) nil nil)]
 )
 
 (def (prune g xs)                           ;rec remov-if satisfy g ;!keep

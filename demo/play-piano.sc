@@ -63,6 +63,7 @@ zxcv m,./
 
 ; h8877hh7h34b 477hh44h4we
 
+;sometime will exit, maybe caused by beep ?
 (def [play-piano]
   (let ~ ([c (read-char)] [scale 0]) ;init
     (if [eq c #\`] nil ;exit
