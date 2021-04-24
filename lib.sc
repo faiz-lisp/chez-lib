@@ -7,15 +7,15 @@
 
   - Update notes:
     - 1.99
-      - o upd
+      - Q upd : str-repl%, replace% can CRUD
+      - q add : clean-choose
+      - O add : (do-for xs conv deconv)
       - N add : chooses with [repeat? F]; upd : choose -> with [once? T]
-      - n add : += -=
-      - M upd : demo play-piano ...
-      - m repl: Tru/Fal -> T/F
+      - n add : -=
+      - M upd : demo play-piano
       - L add : elem-freq, mem?-and-do
       - K add : save-bin-file
-      - k fix : evs via: readexp -> read-expr
-      - J add : replace%, str-repl%
+      - k upd : read-expr
       - I add : strcat/sep-per flow load-binary-file
       - i Upd : (save-file cont file [codec "utf-8"])
       - h add : replaces, str-repls, get-file-var ...
@@ -27,7 +27,7 @@
       - C add : choose, *paths*, rlist...
       - B upd : files/cont
       - a add : (collect 10 (do-sth))
-      - : add : int<->str/system, digit<->char, global vars
+      - ~ add : int<->str/system, digit<->char, global vars
     - 1.98
       - Z add : separa, strcat/sep
       - X add : str-divides, file-ext, str/sep-chars
@@ -44,7 +44,7 @@
       - E upd : add list/sep
       - C add : (list/seps '(1 2 3) '(4 5)) ~> '(1 4 5 2 4 5 3)
       - B Add : (lam/lams ([(a) b] c . xs) [append (list a b c) xs])
-      - : add : in-range;
+      - ~ add : in-range;
     - 1.97
       - w Add : (deep& rev char-downcase '((#\a #\s) #\D)) ~> '(#\d (#\s #\a))
       - v Add : (deep-exist-match? [lam (x) (cn-char? x)] '((#\我) #\3)) ~> T
@@ -54,16 +54,16 @@
       - L fix : for: map -> for-each; upd : tail=list-tail; add : tail%
       - h Add : (doc-add '(load-lib str)) (doc load-lib)~>'(load-lib str)
       - c Add : htab-:kvs,keys,values
-      - : Add : (doc-ls co) -> documentable-keys -> '(cons cond); house keeping;
-    - 1.96z upd : def/doc, doc; Added doc-paras;
-    - 1.96: Add : docs
-    - 1.95c Upd : ./
-    - 1.95: Add : fold (_ f x xs), foldl-n (_ n fn xs), infix->prefix (_ xs)
-    - 1.94: Add : self-act (_ pow 2 3) => (pow 2 2 2), rev-calc (_ pow 4) => 2
-    - 1.93: Simp: algo: fast-expt, (_ g x [n 1])
-    - 1.92: Upd : api-ls: symbol -> macro
-    - 1.91: add : logic for dividing vowels in japanese
-    - 1.90: Add : data of jp, doremi
+      - ~ Add : (doc-ls co) -> documentable-keys -> '(cons cond); house keeping;
+    - 1.96 upd  def/doc, doc; Added doc-paras;
+    - 1.96 Add  docs
+    - 1.95 Upd  ./
+    - 1.95 Add  fold (_ f x xs), foldl-n (_ n fn xs), infix->prefix (_ xs)
+    - 1.94 Add  self-act (_ pow 2 3) => (pow 2 2 2), rev-calc (_ pow 4) => 2
+    - 1.93 Simp algo: fast-expt, (_ g x [n 1])
+    - 1.92 Upd  api-ls: symbol -> macro
+    - 1.91 add  logic for dividing vowels in japanese
+    - 1.90 Add  data of jp
 
   - Suffixes:
     - @ slow / bad
@@ -261,9 +261,6 @@
     - syt -> '
     - common/special... - :
    
-Code:
-
-```
 |#
 
 (import (chezscheme)) ;need this when use --program
@@ -2087,6 +2084,10 @@ to-test:
   ;]
 )
 
+(def [do-for xs f-xs f-xs-ret]
+  (f-xs-ret xs [f-xs xs])
+)
+
 (def find-x-match
   (case-lam
     ([maker test cnt n0 nT] ;[sec 2]
@@ -2440,27 +2441,55 @@ to-test:
 )
 
 ;(~ xs '([t1 ..][t2 ..]) '(ys ..))
-;(replace% '(z a b a d a b c a c b c) '([a b][a c][b c]) '(Y Z)) ;-> '(z Y Z a d Y Z c Y Z Y Z)
-(def (replace% xs TZ ys)
-  (def (_ tmp ts xs tz)
+
+;(replace% '(z a b a d a b c a c b c) '([a b][a c][b c]) '(Y Z) T) ;-> '(z Y Z a d Y Z c Y Z Y Z)
+;(replace% '(z a b a d a b c a c b c) '([a b][a c][b c]) '() F) ;-> '((6 2) (9) (11))
+(def/va (replace% xs TZ [ys nil] [repl? T] [n -1]) ;
+  (def (repl~ tmp ts xs tz n)
     (if~
+      [eq 0 n] ;
+        (append tmp xs)
       [nilp ts] ;~ eql
         (append ys
-          [_ nil (car TZ) xs (cdr TZ)] )
+          [repl~ nil (car TZ) xs (cdr TZ) (1- n)] )
       [nilp xs] ;ret
         tmp
       (let/ad xs
         (if~
           [eq a (car ts)] ;eq
-            (_ (cons a tmp) (cdr ts) d tz)
+            [repl~ (cons a tmp) (cdr ts) d tz n]
           [nilp tz] ;~ !eql
             (cons a
-              (append tmp [_ nil (car TZ) d (cdr TZ)]) )
+              (append tmp [repl~ nil (car TZ) d (cdr TZ) n]) )
           (let ([tza (car tz)] [tzd (cdr tz)])
-            (_ nil tza (append tmp xs) tzd) ;!eq
+            [repl~ nil tza (append tmp xs) tzd n] ;!eq
   ) ) ) ) )
-  (_ nil (car TZ) xs (cdr TZ)) ;
-)
+  (def (find~ ret tmi tmp ts i-ts xs tz n i j)
+    (if~
+      [eq 0 n]
+        ret ;5
+      [nilp ts] ;~ eql
+        (find~
+          (do-for ret (lam (xs) [cons tmi (nth xs i-ts)])
+            (lam (xs x) (chg-nth xs i-ts x)) )
+          nil nil (car TZ) 1 xs (cdr TZ) (1- n) (+ i j) 0 ) ;3
+      [nilp xs]
+        ret ;6
+      (let/ad xs
+        (if~
+          [eq a (car ts)] ;eq
+            (if (nilp tmp)             
+              [find~ ret  i (cons a tmp) (cdr ts) i-ts d tz n i (1+ j)] ;2
+              [find~ ret tmi (cons a tmp) (cdr ts) i-ts d tz n i (1+ j)] )
+          [nilp tz] ;~ !eql
+            [find~ ret nil nil (car TZ) 1 d (cdr TZ) n (1+ i) 0] ;4
+          (let ([tza (car tz)] [tzd (cdr tz)]) ;!eq
+            [find~ ret nil nil tza (1+ i-ts) (append tmp xs) tzd n i 0] ;1
+  ) ) ) ) )
+  (if repl?
+    [repl~ nil (car TZ) xs (cdr TZ) n] 
+    [find~ (xn->list nil (len TZ)) nil nil (car TZ) 1 xs (cdr TZ) n 1 0]
+) )
 
 ;(replaces '(z a b a d a b c a c b c) '([a b][a c][b c]) '([X][Y Z][])) ;~> '(z X a d X c Y Z)
 ;do (_ xs '([(a s)(s d)][(d f)]) '([Z X][]) )
@@ -2591,10 +2620,14 @@ to-test:
 ; string
 
 ;(str-repl% "adssadas.ds.ad" '("ad" "s.") "X")
-(def/va (str-repl% s0 sz s2)
-  (let ([conv str->list] [deconv list->str])
-    [deconv (replace% [conv s0] [map conv sz] [conv s2])]
-) )
+(def/va (str-repl% s0 sz [s2 ""] [n -1] [repl? T])
+  (letn
+    ( [conv str->list] [deconv list->str]
+      [tmp (replace% [conv s0] [map conv sz] [conv s2] repl? n)] ) ;
+    (if repl?
+      (deconv tmp)
+      tmp
+) ) )
 
 (def/va (str-repl ss sx sy [num -1]) ;~ ;(redu str-repl% [map str->list (list ss sx sy)])
   (list->str
@@ -3160,7 +3193,7 @@ to-test:
 
 ; demo
 
-;(cost (_ 24 '(1 2 5 10 nil) '(+ - * / eq id cons list) =))
+;(cost (gotcha 24 '(1 2 5 10 nil) '(+ - * / eq id cons list) =))
 ;(cost (_ 24 '(1 2 3 4 nil + - * / cons eq list) '() =))
 ;(cost (_ (church 2) '(1) '(church church1+) church=))
 ;(cost (_ (church 2) '(1 church1) '(church church+) church=))
@@ -3174,9 +3207,11 @@ to-test:
     [ops '(+ - * / eq cons)] [= =] [packers '(list rlist)] )    
   (setq *paths* nil) ;clean
   (letn ;
-    ( [a (choose data)] ;n-data-max
+    ( [data (rand-seq data)] ;
+      [a (choose data)]
       [b (choose data)]
-      [c (choose data)]
+      [c (choose data)] ;[ds (chooses data 3)] let-values
+      ;[da-b (remov-1 a data)] [b (choose da-b)] [da-c (remov-1 b da-b)] [c (choose da-c)]
       
       [f (choose [if (nilp ops) data ops])] ;try rand ;n-ops = 1- n-data
       [g (choose [if (nilp ops) data ops])]
@@ -3451,9 +3486,13 @@ to-test:
  
 ; on lisp
 
+(def (clean-choose)
+  (setq *paths* nil)
+)
+
 (def/va (choose% xs [once? T]) ;syt: fail
   (def (~ choices) ;choose
-    (if (nilp choices) [fail]
+    (if (nilp choices) [fail] ;
       (let/ad choices
         (call-with-current-continuation
           (lam [cc]
@@ -3487,7 +3526,7 @@ to-test:
               choices
         ) ] )
         [fail]
-  ) ) ) ;(def fail nil)
+  ) ) )
   (call-with-current-continuation ;
     (lam [cc]
       (setq fail ;
@@ -3512,8 +3551,10 @@ to-test:
   (~ nil xs 1) ;seq?
 )
 
+;on lisp
+
 (def (infix->prefix xs)
-  (def(_ ret xs)
+  (def (_ ret xs)
     (if (nilp xs) ret
       (if (cdr-nilp xs) [error "xs length not proper" xs] ;infix->prefix] ;
         (_ (list (car xs) ret [~ (cadr xs)])
@@ -5111,7 +5152,7 @@ to-test:
 
 (def (sleep ms) (c-sleep [fixnum ms]))
 
-(def/va (beep [freq 456] [dura 200]) (c-beep freq dura))
+(def/va (beep [freq 456] [dura 188]) (c-beep freq dura))
 
 (def (clock*)
   (inexact (/ (clock) CLOCKS_PER_SEC)) ;
@@ -5122,7 +5163,7 @@ to-test:
     ( [time (current-time)]
       [sec  (time-second time)]
       [nano (time-nanosecond time)] )
-    [+ (.* sec [pow 10 3]) (.* nano [pow 10 -6])] ;(real-time)?
+    [+ (* sec [pow 10 3]) (.* nano [pow 10 -6])] ;(real-time)?
     ;(list sec nano)
 ) )
 
@@ -5130,7 +5171,7 @@ to-test:
   (if (str/pair/vec? x) eql eq)
 )
 
-(def (mem?% x xs) (bool(mem? x xs)))
+(def (mem?% x xs) (bool (mem? x xs)))
 
 ;(setq a '(1 2 2 3 3 3 4)) ;~> '(2 3)
 (def (filter-same xs)   ;OK
