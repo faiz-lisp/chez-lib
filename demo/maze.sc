@@ -7,7 +7,7 @@
 
 #|
 = Update notes
-  - .
+  - add comments
 |#
 
 ;-|+ o
@@ -46,6 +46,7 @@
       [wh (list w h)]
       [line1 (xn->list 1 w)]
     )
+    ; line 2
     (def/va (line~2 [mark? F] [i-mark 4]) ;mark 'o/'x
       (def (~ xs i mark?)
         (if~
@@ -63,6 +64,7 @@
       (cons 1 (cons 0 ;
           [~ (list 1) (1- w) mark?] ;
     ) ) )
+    ; line 3
     (def/va (line~3 [cross 1] [bar 1])
       (def (~ xs i)
         (if (<= i 2) xs
@@ -70,15 +72,20 @@
       ) )
       (cons 1 (cons [rand-ab 0 bar]
           [~ (list 1) (1- w)]
-    ) ) )    
+    ) ) )
+    ; check
     (def (chk) [redu logic-and (map (rcurry >= 5) wh)])
+    ; rand
     (def/va (rand-ab [a 0] [b 1])
       (if [= 1 (ceil (random 3.59375))] b a) ) ;(2,4) ~> 3 ;(avg 3.5625 3.625)
-    (def (~ xs i) ;main
+    ; main func
+    (def (~ xs i)
       (if (>= i h) xs
         [~ (cons [line~2] (cons [line~3 ] xs)) (+ i 2)]
     ) )
+    ; reset
     [reset-randseed]
+    ;-- main
     (if (chk)    
       (cons line1
         (cons [line~2 T (half (1- w))]

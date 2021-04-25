@@ -7,7 +7,7 @@
 
   - Update notes:
     - 1.99
-      - r add : demo maze
+      - r upd : demo maze
       - Q upd : str-repl%, replace% can CRUD
       - q add : clean-choose
       - O add : (do-for xs conv deconv)
