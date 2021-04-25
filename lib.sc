@@ -7,6 +7,7 @@
 
   - Update notes:
     - 1.99
+      - r add : demo maze
       - Q upd : str-repl%, replace% can CRUD
       - q add : clean-choose
       - O add : (do-for xs conv deconv)
@@ -335,6 +336,7 @@
 (ali   eql   equal?)
 (alias equal equal?)
 
+(alias f-and logic-and)
 (alias ==    equal?)
 (alias ?: if)
 ;(alias ?  if)
@@ -2573,7 +2575,22 @@ to-test:
 
 ;elap cant print ""
 
+(def (logic-and . bs) ;&&
+  (def (~ bs)
+    (if (nilp bs) T
+      (let/ad bs
+        (if~ a
+          [~ d]
+          F
+  ) ) ) )
+  (~ bs)
+)
+
 ; number
+
+(def (half x)
+  (/ x 2)
+)
 
 (def [int n] ;
   (def (_ n)
