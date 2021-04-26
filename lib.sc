@@ -7,6 +7,8 @@
 
   - Update notes:
     - 1.99
+      - S upd : refs nths xths pts->vals
+      - s add : groups, nths
       - r upd : demo maze
       - Q upd : str-repl%, replace% can CRUD
       - q add : clean-choose
@@ -311,6 +313,7 @@
 (ali char->int  char->integer)
 (ali int->char  integer->char)
 (ali replace  list-repl0)
+(alias make-groups combinations)
 
 ;better
 
@@ -3028,28 +3031,68 @@ to-test:
   (map char->string (string->list s))
 )
 
+;
+
+(def (ref% xs is) ;xth% ;nth% array pont [offs 0]
+  (def (_ xs is)
+    (if (nilp is) xs
+      (let/ad is
+        [_ (ref xs a) d] ;
+  ) ) )
+  (_ xs is)
+)
+
+(def (nth% xs ns)
+  (def (_ xs ns)
+    (if (nilp ns) xs
+      (let/ad ns
+        [_ (ref xs [fx1- a]) d] ;
+  ) ) )
+  (_ xs ns)
+)
+
 (def (xth xs . iths)
-  ; (def (once x i)
-    ; (if (atomp x) x ;< i 1 car ;cdr-nilp x car
-      ; (list-ref x i)
-  ; ) )
   (def (_ x iths i) ;
-    (if (nilp iths) [list-ref x i]
+    (if (nilp iths)
+      (list-ref x i)
       [_ (list-ref x i) (cdr iths) (car iths)] ;
   ) )
   (_ xs (cdr iths) (car iths)) ;
 )
 (def (nth xs . nths) ;raw
   (def (_ x nths i) ;
-    (if (nilp nths) [list-ref x i]
-      [_ (list-ref x i) (cdr nths) (1-(car nths))] ;
+    (if (nilp nths)
+      (list-ref x i)
+      [_ (list-ref x i) (cdr nths) (1- (car nths))] ;
   ) )
-  [_ xs (cdr nths) (1-(car nths))] ;
+  [_ xs (cdr nths) (1- (car nths))] ;
 )
 
+;(~ '([(1 2)(3 4)][(5)(6)]) '([1 1 1][2 2 1])) ;-> '(1 6)
+(def/va (refs xz rfz [f ref%]) ;
+  (def (~ xs ns)
+    [f xs ns] ) ;nth != pt
+  (def (_ nz)
+    (if (nilp nz) nil
+      (let/ad nz
+        (cons [~ xz a] (_ d)) ;
+  ) ) )
+  (_ rfz)
+)
 
-(def [car-consp x] (consp(car x)))
-(def [car-atomp x] (atomp(car x)))
+(def (pt->val xs pt) ;offs-0?
+  (nth% xs [rev pt]) ;
+)
+
+(def (nths xs nz)
+  (refs xs nz nth%)
+)
+(def (pts->vals xs pts)
+  (refs xs pts pt->val)
+)
+
+(def [car-consp x] (consp (car x)))
+(def [car-atomp x] (atomp (car x)))
 
 ;pieces of the most beautiful code
 
@@ -3641,7 +3684,6 @@ to-test:
 ;(cost (prime (1-[redu~ * (primes 2 13)]) 1))
 ;402245102020351 is the nth? prime-num start from 2 ?
 
-
 (def n-digits ;integer-length 128 2
   (case-lam
     ( [num m] ;@ not for float
@@ -3717,7 +3759,6 @@ to-test:
     (_ xs)
 ) )
 (def (remov-all x xs)
-  ;
   (let ([g (eq/eql x)]) ;
     (def (_ xs)
       (if (nilp xs) nil
@@ -3776,6 +3817,7 @@ to-test:
   ;(_ xs [sort < (filter >0 nths)] 1) ;
   (_ xs nths 1) ;
 )
+
 (def [permutation xs] ;(_ n xs-range n0) ;how ab repeating cases?
   (def (_ ret xs ys)
     (if (nilp xs) ret
@@ -3790,6 +3832,7 @@ to-test:
   (_ nil xs xs)
 )
 
+;make-groups
 (def [combinations xs n] ;todo [full-combinations/subsets '(1 2)]~>'([1 2][1][2][])
   (def (_ xs n)
     (if~
@@ -3806,12 +3849,12 @@ to-test:
 
 (def (permu-n xs n)
   (redu~ append~
-    (map permu (combinations xs n))
+    (map permu (combinations xs n)) ;
 ) )
 
-(def_ (subsets xs) ;_ '(1 2) ~> '(() (1)(2)(3) (1 2)(2 3)(1 3))
+(def_ (subsets xs) ;_ '(1 2 3) ~> '(() (1)(2)(3) (1 2)(2 3)(1 3) (1 2 3))
   (if (nilp xs) (list nil)
-    (let ([rest [_ (cdr xs)]])
+    (let ((rest [_ (cdr xs)]))
       (append rest
         (map [curry cons (car xs)] rest)
 ) ) ) )
@@ -3851,18 +3894,30 @@ to-test:
     (rev [_ nil xs]) ;
 ) )
 
-(def (arb-group xs . ns) ;arbitrarily
-  (def (_ xs n ms tmp ret)
-    (if (nilp xs) (cons [rev tmp] ret)
-      (if (nilp ms)
-        (if (=0 n)
-          (cons [rev tmp] ret)
-          [_ (cdr xs) (1- n) nil (cons(car xs)tmp) ret] )
-        (if (=0 n)
-          [_ xs (car ms) (cdr ms) nil (cons tmp ret)]
-          [_ (cdr xs) (1- n) ms (cons(car xs)tmp) ret]
-  ) ) ) )
+(def (arb-group xs . ns) ;arbitrarily/mutable
+  (def (_ xs n ms tmp ret) ;
+    (if (nilp xs)
+      (cons [rev tmp] ret)
+      (let/ad xs
+        (if (nilp ms)
+          (if (eq 0 n)
+            (cons [rev tmp] ret)
+            [_ d (1- n) nil (cons a tmp) ret] )
+          (if (eq 0 n)
+            [_ xs (car ms) (cdr ms) nil (cons tmp ret)]
+            [_ d (1- n) ms (cons a tmp) ret]
+  ) ) ) ) )
   [rev (_ xs (car ns) (cdr ns) nil nil)]
+)
+
+;divide-groups into?
+(def (groups xs . ns) ;
+  (def (_ xs ns)
+    (if (nilp ns) xs
+      (map (rcurry _ [cdr ns]) ;
+        (group xs [car ns])
+  ) ) )
+  (_ xs ns)
 )
 
 (def (prune g xs)                           ;rec remov-if satisfy g ;!keep

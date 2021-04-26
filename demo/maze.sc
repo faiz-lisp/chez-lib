@@ -7,6 +7,8 @@
 
 #|
 = Update notes
+  - upd
+  - add wall, blank
   - add comments
 |#
 
@@ -38,13 +40,13 @@
 ;1 o.  w
 ;1  .x w
 ;o,x <= (w-1)/2,(w+1)/2
-(def/va (maze [w 20] [h 20]) ;[min 5] ;[cross '+] [row '-] [col '|]
+(def/va (maze [w 20] [h 20] [wall 0] [blank 1]) ;[min 5] ;[cross '+] [row '-] [col '|] 
   (letn
     ( [even->odd (lam (x) (if [even? x] (1+ x) x))]
       [w (even->odd w)]
       [h (even->odd h)]
       [wh (list w h)]
-      [line1 (xn->list 1 w)]
+      [line1 (xn->list wall w)]
     )
     ; line 2
     (def/va (line~2 [mark? F] [i-mark 4]) ;mark 'o/'x
@@ -55,28 +57,28 @@
           [<= i i-mark]
             [~
               (cons [rand-ab]
-                (cons (if mark? 'X 0) ;
+                (cons (if mark? 'X blank) ;
                   xs ) )
               (- i 2)
               F ] ;            
-          [~ (cons [rand-ab] (cons 0 xs)) (- i 2) mark?] ;
+          [~ (cons [rand-ab] (cons blank xs)) (- i 2) mark?] ;
       ) )
-      (cons 1 (cons 0 ;
-          [~ (list 1) (1- w) mark?] ;
+      (cons wall (cons blank ;
+          [~ (list wall) (1- w) mark?] ;
     ) ) )
     ; line 3
-    (def/va (line~3 [cross 1] [bar 1])
+    (def/va (line~3 [cross wall] [bar wall])
       (def (~ xs i)
         (if (<= i 2) xs
-          [~ (cons cross (cons [rand-ab 0 bar] xs)) (- i 2)] ;
+          [~ (cons cross (cons [rand-ab blank bar] xs)) (- i 2)] ;
       ) )
-      (cons 1 (cons [rand-ab 0 bar]
-          [~ (list 1) (1- w)]
+      (cons wall (cons [rand-ab blank bar]
+          [~ (list wall) (1- w)]
     ) ) )
     ; check
     (def (chk) [redu logic-and (map (rcurry >= 5) wh)])
     ; rand
-    (def/va (rand-ab [a 0] [b 1])
+    (def/va (rand-ab [a blank] [b wall]) ;1 0
       (if [= 1 (ceil (random 3.59375))] b a) ) ;(2,4) ~> 3 ;(avg 3.5625 3.625)
     ; main func
     (def (~ xs i)
@@ -95,16 +97,39 @@
       nil
 ) ) )
 
+;0
+;c 1~9 a b
+;. - | L closewise... T cw... +
+;closewise: 0000 UpRtDnLf
+;0 0101 1010 1100 0110 0011 1001 0111 1011 1101 1110 1111
+;(setq a '(0 5 #xA #xC 6 3 9 7 #xB #xD #xE #xF))
+;(setq b '(|.| - I L t L3 J T T2 T3 T4 +))
+;(0 3 5 6 7 9 10 11 12 13 14 15)
+;(|.| L3 - t T J I T2 L T3 T4 +)
+;rest 1 2 4 8
+
 ;o x
 ;man,d ~> flag,e; trace,f
 ;(map str '(#\x26DA #\x274E))
-(def/va (show-maze maz [mrks `((0 1 X) ,[map str '(" " "E" "o")])] [sep ""])
+(def/va (show-maze mz [sep ""] [mrks `((0 1 X) ,[map str '(" " "E" "o")])])
   (letn
     ( [mrks (map (curry map list) mrks)]
       [f (rcurry (curry redu replaces) mrks)]
-      [tmp (map [flow f (rcurry strcat/sep sep)] maz)]
+      [tmp (map [flow f (rcurry strcat/sep sep)] mz)]
     )
     (echol [strcat/sep tmp "\n"])
+) )
+
+;(get-pt-cross mz '(3 3)) ;[start 0]
+(def/va (get-pt-cross xs pt [cw? T]) ;[start 0]
+  ;,y-1 x+1, ,y+1 x-1,
+  (letn
+    ( [pt.x (car pt)] [pt.y (cadr pt)]
+      [pt0 (list pt.x (1- pt.y))]
+      [pt1 (list (1+ pt.x) pt.y)]
+      [pt2 (list pt.x (1+ pt.y))]
+      [pt3 (list (1- pt.x) pt.y)] )    
+    (pts->vals xs (list pt0 pt1 pt2 pt3))
 ) )
 
 ;-- main
