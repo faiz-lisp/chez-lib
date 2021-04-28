@@ -10,6 +10,11 @@
   - upd
   - add wall, blank
   - add comments
+  
+= TODO
+  - algo: go pass maze
+  - chg-pts-val
+  - wall -> 11 kinds of table bars
 |#
 
 ;-|+ o
@@ -40,7 +45,7 @@
 ;1 o.  w
 ;1  .x w
 ;o,x <= (w-1)/2,(w+1)/2
-(def/va (maze [w 20] [h 20] [wall 0] [blank 1]) ;[min 5] ;[cross '+] [row '-] [col '|] 
+(def/va (maze w [h 20] [wall 1] [blank 0]) ;[min 5] ;[cross '+] [row '-] [col '|] 
   (letn
     ( [even->odd (lam (x) (if [even? x] (1+ x) x))]
       [w (even->odd w)]
@@ -49,7 +54,7 @@
       [line1 (xn->list wall w)]
     )
     ; line 2
-    (def/va (line~2 [mark? F] [i-mark 4]) ;mark 'o/'x
+    (def/va (line~2 [mark? F] [i-mark 4] [mark 'X]) ;mark 'o/'x
       (def (~ xs i mark?)
         (if~
           (<= i 2)
@@ -57,7 +62,7 @@
           [<= i i-mark]
             [~
               (cons [rand-ab]
-                (cons (if mark? 'X blank) ;
+                (cons (if mark? mark blank) ;
                   xs ) )
               (- i 2)
               F ] ;            
@@ -79,7 +84,7 @@
     (def (chk) [redu logic-and (map (rcurry >= 5) wh)])
     ; rand
     (def/va (rand-ab [a blank] [b wall]) ;1 0
-      (if [= 1 (ceil (random 3.59375))] b a) ) ;(2,4) ~> 3 ;(avg 3.5625 3.625)
+      (if [= 1 (round (random 2.8281275))] b a) ) ;(2,4)~>3.5625 ;(avg 2.828127 2.828247)
     ; main func
     (def (~ xs i)
       (if (>= i h) xs
@@ -92,7 +97,7 @@
       (cons line1
         (cons [line~2 T (half (1- w))]
           (cons [line~3 ]
-            [~ (list [line~2 T (half (+ w 3))] line1) (+ 2 1 2)] ;
+            [~ (list [line~2 T (half (+ w 3)) 'Y] line1) (+ 2 1 2)] ;
       ) ) )
       nil
 ) ) )
@@ -111,7 +116,7 @@
 ;o x
 ;man,d ~> flag,e; trace,f
 ;(map str '(#\x26DA #\x274E))
-(def/va (show-maze mz [sep ""] [mrks `((0 1 X) ,[map str '(" " "E" "o")])])
+(def/va (show-maze mz [sep ""] [mrks `((0 1 X Y) ,[map str '(" " "E" "o" "x")])])
   (letn
     ( [mrks (map (curry map list) mrks)]
       [f (rcurry (curry redu replaces) mrks)]
@@ -120,19 +125,38 @@
     (echol [strcat/sep tmp "\n"])
 ) )
 
+(def/va (pts->vals/try xs pts [conv id] [defa 0])
+  (refs xs pts (rcurry pt->val/try conv defa)) ;
+)
+
 ;(get-pt-cross mz '(3 3)) ;[start 0]
-(def/va (get-pt-cross xs pt [cw? T]) ;[start 0]
-  ;,y-1 x+1, ,y+1 x-1,
+(def/va (get-pt-cross xs pt [cw? T] [kvs '()]) ;[defa 0]
+  ;,y-1 x+1, ,y+1 x-1, ;if out of range try-fail=>defa
   (letn
     ( [pt.x (car pt)] [pt.y (cadr pt)]
       [pt0 (list pt.x (1- pt.y))]
       [pt1 (list (1+ pt.x) pt.y)]
       [pt2 (list pt.x (1+ pt.y))]
-      [pt3 (list (1- pt.x) pt.y)] )    
-    (pts->vals xs (list pt0 pt1 pt2 pt3))
+      [pt3 (list (1- pt.x) pt.y)]
+      [conv (curry key->val kvs)] ) ;
+    (pts->vals/try xs (list pt0 pt1 pt2 pt3) conv) ;
 ) )
+
+;/dire up / pt-to-last
+;if cw found 'x win, else found 0/o -> o, upd curr-o
+
+;chg-pts-via-cross
+; (def (chg-pts-via-cross xs pts)
+  ; (def (_ ret tmp xs pts)
+    ; (if~
+      ; (nilp xs)
+  ; ) )
+  ; (_ nil nil xs pts)
+; )
 
 ;-- main
 
 ;(setq mz (maze 20 20))
+;- analyse -> paths
+;- way-in/out
 ;(show-maze mz)

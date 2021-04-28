@@ -7,6 +7,8 @@
 
   - Update notes:
     - 1.99
+      - u upd : range
+      - T add : chg-nth, chg-ref-val
       - S upd : refs nths xths pts->vals
       - s add : groups, nths
       - r upd : demo maze
@@ -561,7 +563,7 @@
 ;
 
 (alias identity id)
-(alias li list) ;
+(alias li list)
 
 (ali str->list string->list)
 ;(ali str-divide string-divide)
@@ -718,7 +720,7 @@ to-test:
   ( [_ g (p ...) body ...]
     (def/va%2 g (p ...) (p ...) () [] body ...)
 ) )
-(ali def/defa def/va)
+(alias def/defa def/va)
 ;test: (def/va (sublis xs [s 0] n) [head(tail xs s)n]) (sublis '(1 2 3) 2)
 
 (def-syt vec-for ;
@@ -848,7 +850,6 @@ to-test:
 )
 ;
 
-
 ;sy-
 
 (defsyt sy-rev% ;
@@ -899,11 +900,9 @@ to-test:
     [lam-nest% (xs ...) [bgn bd ...]] )
 )
 
-(ali && and)
-(ali || or)
+(alias && and)
 
-(ali & bitwise-and)
-;X (ali | bitwise-or)
+(ali & bitwise-and) ;bits-and
 
 (alias todo   quiet)
 (alias tofix  id)
@@ -924,7 +923,7 @@ to-test:
 ) ) )
 (defsyt set-xth! ;chg-nth
   ( [_ xs i y]
-    (letn [ (n (fx1+ i))
+    (letn [ (n (1+ i))
             (m (1- i))
             (ln (len xs))
             (pre (ncdr xs (- m ln -1))) ;
@@ -1072,8 +1071,8 @@ to-test:
 
 ;C
 
+;(alias ref list-ref)
 
-(alias ref list-ref)
 ;lisp use quo and defsyt, instead of get-addr in c
 (defsyt swap
   ( [_ a b]
@@ -1535,8 +1534,6 @@ to-test:
 (def    spc  " ")
 (define Void *v)
 (define Err  *v) ;
-(define T  *t)
-(define F  *f)
 
 ;
 
@@ -2374,7 +2371,19 @@ to-test:
 ) ) )
 (def l-merge (swap-para r-merge))
 
-(defn chg-nth (xs n . ys)
+;(chg-xth '((1)2) 0 3)
+(def/va (chg-nth XS i [new nil] [base 1]) ;chg-nth-val [base 0] ;chg-val-by-a-ref
+  (def (~ xs i)
+    (if (nilp xs) nil ;
+      (let/ad xs
+        (if (<= i base)
+          (cons new d) ;
+          (cons a [~ d (1- i)])
+  ) ) ) )
+  (~ XS i)
+)
+
+(def (chg-nth2 xs n . ys) ;
   [def (_ xs n ys)
     (if (nilp xs) xs
       (cond
@@ -2387,17 +2396,35 @@ to-test:
 )
 
 ;chg-nths, xs nths, y; .., n; cond case1 case2; init;
-(defn chg-nths (xs nths y) ; nths is sorted and uniqueness
+(def (chg-nths xs nths y) ; nths is sorted and uniqueness
   (def (_ xs nths n)
-    (if (nilp xs) nil
-      (if (nilp nths) xs
-        (if [eq (car nths) n]
-          (cons y
-            [_ (cdr xs) (cdr nths)  (fx1+ n)] )
-          (cons (car xs)
-            [_ (cdr xs) nths  (fx1+ n)] )
-  ) ) ) )
+    (if~
+      (nilp xs) nil
+      (nilp nths) xs
+      [eq (car nths) n]
+        (cons y
+          [_ (cdr xs) (cdr nths) (fx1+ n)] )
+      (cons (car xs)
+        [_ (cdr xs) nths (fx1+ n)]
+  ) ) )
   (_ xs nths 1)
+)
+
+;(chg-pt-val '((1)2) '(0 0) 3)
+(def/va (chg-ref-val xs ref [new nil] [base 0] [pt-form? F]) ;chg-val-by-ref [base 0] [pt-form? F]
+  (def (chg~ xs ref i)
+    (if~
+      [nilp ref] ;full 3
+        (chg-nth xs i new base)
+      [nilp xs] ;end 4
+        nil
+      (let/ad xs
+        (if
+          [<= i base] ;nor-succ 1 => upd tmp?
+            (cons [chg~ a (cdr ref) (car ref)] d)
+          (cons a [chg~ d ref (1- i)]) ;nor 2 => 1-
+  ) ) ) )
+  (chg~ xs (cdr ref) (car ref))
 )
 
 ;(replace2 '(a a a s) '(a a s) '(q w))
@@ -2870,22 +2897,35 @@ to-test:
 ) )
 (def (echo . xs) (apply echo% (cons " " xs))) ;
 
-(def (mk-range% s e p) ;how about iota
-  (let ([g (if [> p 0] > <)])
-    (def (_ x)
-      (if (g x e) nil
-        (cons x [_ (+ x p)]) ;
+(def range ;-> (0 ... n-1)
+  (case-lam
+    ( [s e] ;~
+      (def (_ ret e)
+        (if (fx< e s) ret
+          [_ (cons e ret) (fx1- e)] ;
+      ) )
+      (_ nil e) )
+    ( [n] ;(rang 1 n)
+      (range 0 (1- n))
+    )
+    ( [s e p] ;@
+      (let ([g (if [>= p 0] > <)])
+        (def (_ i)
+          (if (g i e) nil
+            (cons i [_ (+ i p)])
+        ) )
+        (cons s [_ (+ s p)]) ;
     ) )
-    (if (g s e) nil          
-      [_ s]
+    ( [s e f p]
+      (let ([g (if [>= (f p) 0] > <)]) ;*|/
+        (def (_ i)
+          (if (g i e) nil
+            (cons i [_ (f i p)]) ;
+        ) )
+        (cons s [_ (f s p)])
+    ) )
+    ( [total s e f p] (range/total total s f p e) ;?
 ) ) )
-
-(def range
-  (case-lambda
-    ((a)     (mk-range% 0 (1- a) 1))
-    ((a b)   (mk-range% a b 1))
-    ((a b c) (mk-range% a b c))
-) )
 
 ;(range/total 30 4 ./ 2 0.1) ;
 (def/va (~range/total total [s 0] [f +] [p 1] [e nil]) ; more wont make slower
@@ -2921,25 +2961,6 @@ to-test:
 
 ;rpush 1 nil
 
-(def range% ;@
-  (case-lam
-    ( [n/s e f p]
-      (def (_ n/s e f p res)
-        (cond
-          ((nilp e) (_ 0 (1- n/s) f p res))
-          (else
-            (let ([m (f n/s p)])
-              (if ([if(> m n/s) < >] e n/s) ;stru<?
-                res
-                (_ m e f p (rpush n/s res)) ;
-      ) ) ) ) )
-      (_ n/s e f p '()) ) ;
-    ([n/s e f] (range% n/s nil + 1))
-    ([n/s e  ] (range% n/s nil +))
-    ([n/s    ] (range% n/s nil))
-) )
-
-;(range2 sum f p n)
 
 (def (echol . xs)
   (apply echo xs) (newln) ;
@@ -3033,33 +3054,57 @@ to-test:
 
 ;
 
-(def (ref% xs is) ;xth% ;nth% array pont [offs 0]
-  (def (_ xs is)
-    (if (nilp is) xs
-      (let/ad is
-        [_ (ref xs a) d] ;
-  ) ) )
-  (_ xs is)
+(def (ref xs i) ;10ms
+  (def (~ xs i)
+    (if ;10ms ;(nilp xs) xs
+      [consp xs]
+        (let/ad xs
+          (if (<= i 0) a ;30ms
+            [~ d (1- i)]
+        ) ) 
+      xs ;10ms
+  ) )
+  (~ xs i)
 )
 
-(def (nth% xs ns)
+; (def/va (ref% xs is [base 0]) ;xth% ;nth% array pont [offs 0]
+  ; (def (_ xs is)
+    ; (if (nilp is) xs
+      ; (let/ad is
+        ; [_ (ref xs [- a base]) d] ;
+  ; ) ) )
+  ; (_ xs is)
+; )
+
+(def/va (nth% xs ns [conv id]) ;[defa nil]
   (def (_ xs ns)
-    (if (nilp ns) xs
+    (if (nilp ns)
+      [conv xs] ;
       (let/ad ns
-        [_ (ref xs [fx1- a]) d] ;
+        [_ (ref xs [1- a]) d] ;.
   ) ) )
   (_ xs ns)
 )
 
-(def (xth xs . iths)
-  (def (_ x iths i) ;
-    (if (nilp iths)
-      (list-ref x i)
-      [_ (list-ref x i) (cdr iths) (car iths)] ;
-  ) )
-  (_ xs (cdr iths) (car iths)) ;
+(def/va (xth% xs ns [conv id]) ;[defa nil]
+  (def (_ xs ns)
+    (if (nilp ns)
+      [conv xs] ;
+      (let/ad ns
+        [_ (ref xs a) d] ;.
+  ) ) )
+  (_ xs ns)
 )
-(def (nth xs . nths) ;raw
+
+(def (xth xs . is)
+  (def (_ x is i) ;
+    (if (nilp is)
+      (list-ref x i)
+      [_ (list-ref x i) (cdr is) (car is)] ;
+  ) )
+  (_ xs (cdr is) (car is)) ;
+)
+(def (nth xs . nths) ;45ms
   (def (_ x nths i) ;
     (if (nilp nths)
       (list-ref x i)
@@ -3080,15 +3125,20 @@ to-test:
   (_ rfz)
 )
 
-(def (pt->val xs pt) ;offs-0?
-  (nth% xs [rev pt]) ;
+(def/va (pt->val xs pt [conv id]) ;offs-0?
+  (nth% xs [rev pt] conv) ;
 )
+(def/va (pt->val/try xs pt [conv id] [defa nil]) ;offs-0?
+  (let ([tmp [try (nth% xs [rev pt] conv)]])
+    (if (try-fail? tmp) defa
+      tmp
+) ) )
 
 (def (nths xs nz)
   (refs xs nz nth%)
 )
-(def (pts->vals xs pts)
-  (refs xs pts pt->val)
+(def/va (pts->vals xs pts [conv id])
+  (refs xs pts (rcurry pt->val conv)) ;
 )
 
 (def [car-consp x] (consp (car x)))
@@ -3163,12 +3213,10 @@ to-test:
 
 (def (redu-map r m xs) (redu r (map m xs))) ;syn for such-as or
 
-(defn tru? (b)
-  (if (eq *t b) *t *f)
+(def (tru? b)
+  (if (eq #t b) #t #f)
 )
-(defn fal? (b)
-  (if (eq *f b) *t *f)
-)
+(alias fal? not)
 (defn  neq (x y) [not(eq  x y)])
 (defn !eql (x y) [not(eql x y)])
 
