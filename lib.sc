@@ -3,24 +3,23 @@
 (define (git-url) "https://gitee.com/faiz-xxxx/chez-lib.git")
 
 #|
-== Chez-lib.sc (mainly for Windows) - written by Faiz
+== Chez-lib.sc (mainly for Windows NT) - written by Faiz
 
   - Update notes:
     - 1.99
-      - u upd : range
+      - v add : ref%, ref*, refs*
+      - U upd : range
       - T add : chg-nth, chg-ref-val
       - S upd : refs nths xths pts->vals
       - s add : groups, nths
       - r upd : demo maze
       - Q upd : str-repl%, replace% can CRUD
-      - q add : clean-choose
       - O add : (do-for xs conv deconv)
       - N add : chooses with [repeat? F]; upd : choose -> with [once? T]
       - n add : -=
       - M upd : demo play-piano
       - L add : elem-freq, mem?-and-do
       - K add : save-bin-file
-      - k upd : read-expr
       - I add : strcat/sep-per flow load-binary-file
       - i Upd : (save-file cont file [codec "utf-8"])
       - h add : replaces, str-repls, get-file-var ...
@@ -28,8 +27,8 @@
       - F add : true-choose, str-trim-all
       - e upd : defination of choose -> choose%
       - D upd : case (compose); fix : gotcha;
-      - d add : church, church-
-      - C add : choose, *paths*, rlist...
+      - d upd : church
+      - C add : choose, *paths*, rlist
       - B upd : files/cont
       - a add : (collect 10 (do-sth))
       - ~ add : int<->str/system, digit<->char, global vars
@@ -46,7 +45,6 @@
       - n add : (fixnum 1/1.2);\n upd : (sleep 1.0);
       - n add : (fixnum 1/1.2);\n upd : (sleep 1.0);
       - I add : make-file, make-path
-      - E upd : add list/sep
       - C add : (list/seps '(1 2 3) '(4 5)) ~> '(1 4 5 2 4 5 3)
       - B Add : (lam/lams ([(a) b] c . xs) [append (list a b c) xs])
       - ~ add : in-range;
@@ -68,7 +66,6 @@
     - 1.93 Simp algo: fast-expt, (_ g x [n 1])
     - 1.92 Upd  api-ls: symbol -> macro
     - 1.91 add  logic for dividing vowels in japanese
-    - 1.90 Add  data of jp
 
   - Suffixes:
     - @ slow / bad
@@ -2371,6 +2368,45 @@ to-test:
 ) ) )
 (def l-merge (swap-para r-merge))
 
+;
+
+(def (ref% xs is . paras) ;xth% ;nth% array pont [offs 0]
+  (def (_ xs is)
+    (if (nilp is) xs
+      (let/ad is
+        [_ (ref xs a) d] ;
+  ) ) )
+  (_ xs is)
+)
+
+;[f ref]
+(def/va (ref* xs ref [base 0] [defa nil] [pt-form? F] [conv id]) ;xth/head-tail -> '(a head tail)? [pt-form? F]
+  (def (~ xs i) ;ref*/base
+    (if~
+      [consp xs]
+        (let/ad xs
+          (if (fx> base i) a ;30ms (li a [rev ~head] d) ;
+            [~ d (fx1- i)] ;(cons a ~head)
+        ) )
+      defa
+  ) )
+  (def (_ xs ref)
+    (if (nilp ref) [conv xs]
+      (let/ad ref ;
+        [_ (~ xs a) d]
+  ) ) )
+  (_ xs [if pt-form? (rev ref) ref])
+)
+
+(def/va (refs* xs rfz [f ref*]) ;
+  (def (_ nz)
+    (if (nilp nz) nil
+      (let/ad nz
+        (cons [f xs a] (_ d)) ;
+  ) ) )
+  (_ rfz)
+)
+
 ;(chg-xth '((1)2) 0 3)
 (def/va (chg-nth XS i [new nil] [base 1]) ;chg-nth-val [base 0] ;chg-val-by-a-ref
   (def (~ xs i)
@@ -2905,9 +2941,7 @@ to-test:
           [_ (cons e ret) (fx1- e)] ;
       ) )
       (_ nil e) )
-    ( [n] ;(rang 1 n)
-      (range 0 (1- n))
-    )
+    ( [n] (iota n) )
     ( [s e p] ;@
       (let ([g (if [>= p 0] > <)])
         (def (_ i)
