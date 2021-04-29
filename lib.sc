@@ -1,5 +1,5 @@
 
-(define (version) "Chez-lib v1.99") ;
+(define (version) "Chez-lib v1.99") ;V
 (define (git-url) "https://gitee.com/faiz-xxxx/chez-lib.git")
 
 #|
@@ -7,6 +7,7 @@
 
   - Update notes:
     - 1.99
+      - V add : demo gen-code
       - v add : ref%, ref*, refs*
       - U upd : range
       - T add : chg-nth, chg-ref-val
@@ -25,7 +26,6 @@
       - h add : replaces, str-repls, get-file-var ...
       - G upd : divide
       - F add : true-choose, str-trim-all
-      - e upd : defination of choose -> choose%
       - D upd : case (compose); fix : gotcha;
       - d upd : church
       - C add : choose, *paths*, rlist
@@ -42,7 +42,6 @@
       - p Upd : (lisp nil) ~> F
       - O add : path operations and grep
       - o add : range/total
-      - n add : (fixnum 1/1.2);\n upd : (sleep 1.0);
       - n add : (fixnum 1/1.2);\n upd : (sleep 1.0);
       - I add : make-file, make-path
       - C add : (list/seps '(1 2 3) '(4 5)) ~> '(1 4 5 2 4 5 3)
@@ -78,7 +77,7 @@
   - prefixes:
     - sy/ syt/ for syntax
     - ~ returns a reversed result
-    
+
   - /: means with or namespace
 
   - vars:
@@ -195,7 +194,7 @@
     - main
       - exp/idea
     - cleaner
-    
+
   - tolearn:
     - match
     - import
@@ -243,7 +242,7 @@
     - [] -> ()
     - (small .. big) -> (big .. small)
     - ?: setq
-    - 听说cond要按发生概率高低来排序
+    - clauses should be Hz -> hz
     - def/va: case-lambda needs 1~2X time more than original lambda
     - atomp -> consp
 
@@ -262,7 +261,7 @@
     - (_ X x)
     - syt -> '
     - common/special... - :
-   
+
 |#
 
 (import (chezscheme)) ;need this when use --program
@@ -396,7 +395,7 @@
 
 (alias dmap deep-map)
 
-(alias choose choose%)
+(alias choose choose%) ;
 ;(alias choose true-choose)
 
 (ali api-ls api-with)
@@ -527,7 +526,7 @@
 
 ;-----------------------------------------
 
-(defsyt -=  
+(defsyt -=
   ( [_ x . xs]
     (bgn
       (set! x (- x [+ . xs])) ;
@@ -644,19 +643,19 @@ to-test:
   (def/va (asd a b [li li]) (li a b)) ;(asd 1 2) ;--> ok
 |#
 (def-syt (def/va%4 stx)
-  (syt-case stx ()  
+  (syt-case stx ()
     ;_ g, Ori-pairs para-pairs; main-cnt=(A D), Ori-tmp-cnt=() tmp-cnt=(?); Ret, lamPara=[] bodyPara=[]
     ([_           g ori-pairs ([a A] ... [z Z]) main-cnt ori-tmp-cnt [C1 C2 ...] ret [  lamPara ...] (  bodyPara ...)]
       (eq #'z #'Z)
       #'(def/va%4 g ori-pairs ([a A] ...      ) main-cnt ori-tmp-cnt [C1 C2 ...] ret [z lamPara ...] (z bodyPara ...))
-    )    
+    )
     ([_           g ori-pairs ([a A] ... [z Z]) main-cnt ori-tmp-cnt [C1 C2 ...] ret [  lamPara ...] (  bodyPara ...)]
-                                                                           
+
       #'(def/va%4 g ori-pairs ([a A] ...      ) main-cnt ori-tmp-cnt [   C2 ...] ret [  lamPara ...] (Z bodyPara ...))
     )
     ([_           g ori-pairs ([a A] ... [z Z]) (A0 ...) ori-tmp-cnt [         ] (ret ...) [  tmp ...] (  rest ...)] ;
       #'(def/va%4 g ori-pairs ([a A] ...      ) (A0 ...) ori-tmp-cnt [         ] (ret ...) [z tmp ...] (z rest ...))
-    )    
+    )
     ([_           g ori-pairs (               ) (A0 B0 ...) (   ) [ ] (ret ...) [tmp ...] (rest ...)]
       #'(def/va%4 g ori-pairs ori-pairs  (   B0 ...) (A0) (A0) (ret ...) [] [])
     )
@@ -742,7 +741,7 @@ to-test:
 ) )
 
 (def-syt for ;(for-each g xs)
-  (syt-ruls (in : as)  
+  (syt-ruls (in : as)
     ( [_ i in xs body ...]
       (let loop ([l xs])
         (unless (nilp l)
@@ -756,7 +755,7 @@ to-test:
           body ...)
         xs
     ) )
-        
+
     ( [_ (i : xs) body ...]
       (for-each
         (lam (i)
@@ -778,7 +777,7 @@ to-test:
         (when (< i n)
           b1 ...
           [loop (fx1+ i)] ) ) )
-          
+
     ( [_ (i n) code ...]
       (for [i 0 (1- n)] code ... ) )
     ( [_ (i from to) code ...]
@@ -796,7 +795,7 @@ to-test:
               [~ (+ i step)] ) )
           (else nil)
     ) ) )
-    
+
     ;call/cc
     ( [_ k (n) b1 ...] ;;(for ((+ 2 3)) ..) ;i?
       (let loop ([i 0])
@@ -806,7 +805,7 @@ to-test:
               b1 ...
               [loop (fx1+ i)]
     ) ) ) ) )
-    
+
     ( [_ k (i from to) b1 ...]
       (let loop ([i from]) ;let when
         (call/cc
@@ -1186,7 +1185,7 @@ to-test:
     ( [_ () body ...]
       #'(lam () body ...) )
     ( [_ (a . xs) body ...] (identifier? #'a)
-      #'(lam (a . xs) body ...) ) 
+      #'(lam (a . xs) body ...) )
     ( [_ (a . xs) body ...]
       #'[lam/lams a (lam xs body ...)]
 ) ) )
@@ -1202,7 +1201,7 @@ to-test:
 ) ) )
 
 (defsyt add-to-htab
-  ( [_ ht child ret-if-exist]    
+  ( [_ ht child ret-if-exist]
     (let ([key (car child)])
       (def (_ ht) ;
         (if (eq key (caar ht))
@@ -1236,7 +1235,7 @@ to-test:
 
 ;X(car body) if-is string, save to (doc)
 (defsyt def/doc
-  ( [_ x] (define x *v) )    
+  ( [_ x] (define x *v) )
   ( [_ (g . args) body ...]
     (bgn
       (add-to-htab! *htab/fn-lam* `,[raw (g (lam args body ...))]) ;bef def?
@@ -1483,19 +1482,22 @@ to-test:
 ;[x] (def-ffi (bool Asd [int char bool]) "usage")
 ;[x] (def-ffi (Asd (int char bool)) "usage")
 ;[x] (def-ffi Asd "usage")
+;(_ "BOOL sndPlaySound(LPCSTR lpszSound, UINT fuSound)")
+;-> '(_ (snd-play-sound lpszSound fuSound) (bool sndPlaySound (string int)) nil "BOOL sndPlaySound(LPCSTR lpszSound, UINT fuSound)")
+;(def-ffi (snd-play-sound lpszSound fuSound) (bool "sndPlaySound" (string int)))
 (defsyt def-ffi
   ( [_ (f . xs) (ty-ret api ty-args) body ...]
-    (def f (ffi (sym->str 'api) ty-args ty-ret)) )
-  ( [_ f (ty-ret api ty-args) comment ...]
-    (def f (ffi (sym->str 'api) ty-args ty-ret)) )
-    
+    (def f   (ffi (sym->str 'api) ty-args ty-ret)) )
+  ( [_ f        (ty-ret api ty-args) comment ...]
+    (def f   (ffi (sym->str 'api) ty-args ty-ret)) )
+
   ( [_ f (api ty-args) comment ...]
-    (def f (ffi (sym->str 'api) ty-args void*)) )  
+    (def f   (ffi (sym->str 'api) ty-args void*)) )
   ( [_ (ty-ret api ty-args) comment ...]
     (def api (ffi (sym->str 'api) ty-args ty-ret)) )
   ( [_ (api ty-args) comment ...]
     (def api (ffi (sym->str 'api) ty-args void*)) ) ;
-  
+
   ( [_ f comment ...]
     (def-ffi f (void* f (void))) ;
 ) )
@@ -1549,6 +1551,7 @@ to-test:
 ;===
 
 (def (id x . xs) x)
+;(def (id x) x)
 
 (def/va (doc-add kv [db *htab/fn-lam*])
   (add-to-htab! db kv)
@@ -1707,7 +1710,7 @@ to-test:
           (let ([a (car paras)] [d (cdr paras)])
             (if (cdr-nilp a) ;not-defa
               [_ d (cdr vals) n-head (1- n-ndefa) n-tail (cons (car vals) ret)]
-              (if (<1 n-head) 
+              (if (<1 n-head)
                 [_ d vals 0 n-ndefa (1- n-tail) (cons (ev-cadr a) ret) ] ;
                 [_ d (cdr vals) (1- n-head) n-ndefa n-tail (cons (car vals) ret)]
   ) ) ) ) ) ) )
@@ -2269,7 +2272,7 @@ to-test:
 (def/va (trim-head-n xs trims [handled? F]) ;once?
   (def (_ xs.flg ts)
     (let ([xs (car xs.flg)] [flg (cadr xs.flg)])
-      (if (nilp ts)    
+      (if (nilp ts)
         (if flg
           [trim-head-n xs trims F] ;
           xs )
@@ -2470,7 +2473,7 @@ to-test:
       (if (nilp xs) ;
         (if (nilp src)
           (append Des ret)
-          (append tmp ret) )  
+          (append tmp ret) )
         (if (nilp src)
           [_ (append Des ret) nil xs Src] ;
           (let/ad xs
@@ -2546,7 +2549,7 @@ to-test:
       (let/ad xs
         (if~
           [eq a (car ts)] ;eq
-            (if (nilp tmp)             
+            (if (nilp tmp)
               [find~ ret  i (cons a tmp) (cdr ts) i-ts d tz n i (1+ j)] ;2
               [find~ ret tmi (cons a tmp) (cdr ts) i-ts d tz n i (1+ j)] )
           [nilp tz] ;~ !eql
@@ -2555,7 +2558,7 @@ to-test:
             [find~ ret nil nil tza (1+ i-ts) (append tmp xs) tzd n i 0] ;1
   ) ) ) ) )
   (if repl?
-    [repl~ nil (car TZ) xs (cdr TZ) n] 
+    [repl~ nil (car TZ) xs (cdr TZ) n]
     [find~ (xn->list nil (len TZ)) nil nil (car TZ) 1 xs (cdr TZ) n 1 0]
 ) )
 
@@ -2623,7 +2626,7 @@ to-test:
   (def (_ xs x n)
     (if (nilp xs)
       (list [list x n]) ;
-      (let/ad xs 
+      (let/ad xs
         (if (= x a) ;
           (_ d x (1+ n))
           (cons [list x n] (_ d a 1))
@@ -2648,6 +2651,15 @@ to-test:
         (if~ a
           [~ d]
           F
+  ) ) ) )
+  (~ bs)
+)
+(def (logic-or . bs)
+  (def (~ bs)
+    (if (nilp bs) F
+      (let/ad bs
+        (if~ a T
+          [~ d]
   ) ) ) )
   (~ bs)
 )
@@ -2759,7 +2771,7 @@ to-test:
 )
 
 ;(strcat/sep '("a" "sd" "fg") [" "])
-(def/va (strcat/sep sz [sep " "])  
+(def/va (strcat/sep sz [sep " "])
   (def (_ ret xs)
     (if [nilp xs] ret
       (let/ad xs
@@ -2799,7 +2811,7 @@ to-test:
     (let loop ([ret nil])
       (if (eof-object? (peek-char ou))
         (str (rev ret)) ;\r\n?
-        [loop (cons (read-char ou) ret)] ;% strcat 
+        [loop (cons (read-char ou) ret)] ;% strcat
 ) ) ) )
 
 
@@ -3095,7 +3107,7 @@ to-test:
         (let/ad xs
           (if (<= i 0) a ;30ms
             [~ d (1- i)]
-        ) ) 
+        ) )
       xs ;10ms
   ) )
   (~ xs i)
@@ -3223,7 +3235,7 @@ to-test:
         [(consp xs)
           (_ (car xs)
             (_ (cdr xs) ret) ) ]
-        [else (cons xs ret)]          
+        [else (cons xs ret)]
     ) )
     (_ xs nil)
 ) )
@@ -3346,29 +3358,25 @@ to-test:
 ;data-2: (choose [push data (_)]) ?push-diffe
 (def/va
   (gotcha [tar 24] [data '(0. 1 2 3 4 5 6 7 8 9 nil T F)]
-    [ops '(+ - * / eq cons)] [= =] [packers '(list rlist)] )    
-  (setq *paths* nil) ;clean
+    [ops '(+ - * / eq cons)] [= =] [packers '(list rlist)] )
+  [setq *paths* nil] ;clean-choose
   (letn ;
     ( [data (rand-seq data)] ;
       [a (choose data)]
       [b (choose data)]
       [c (choose data)] ;[ds (chooses data 3)] let-values
-      ;[da-b (remov-1 a data)] [b (choose da-b)] [da-c (remov-1 b da-b)] [c (choose da-c)]
-      
+
       [f (choose [if (nilp ops) data ops])] ;try rand ;n-ops = 1- n-data
       [g (choose [if (nilp ops) data ops])]
-      
+
       [p1 (choose packers)] ;n-pkrs ;(+ 1(- 2(* 3 4))) / (+(- 1 2)(* 3 4)) ;?choose-again, recall gotcha
-      
-      [tmp `(redu ,f (,p1 ,a [redu ,g (list ,b ,c)]))] ;(+ 1 (* 2 3))      
+
+      [tmp `(redu ,f (,p1 ,a [redu ,g (list ,b ,c)]))] ;(+ 1 (* 2 3))
       [resl (try [= tar (ev tmp)])] ;
-      (bool
-        (if (try-fail? resl) F
-          resl
-    ) ) )
+      [bool (if (try-fail? resl) F resl)] )
     (if bool
       (cons f ([ev p1] a (cons g (list b c)))) ;exp
-      (fail) ;fail-and-goon
+      [fail] ;fail-and-goon
 ) ) )
 
 (def/va (mem?-and-do x xs [= eql] [get id] [f-x id]) ;
@@ -3450,6 +3458,7 @@ to-test:
     (redu~ + xs)
     (len xs)
 ) )
+
 (def %
   (case-lam
     [(x) (inexa(/ x 100))]
@@ -3465,6 +3474,10 @@ to-test:
 ;(def .* (compose exa->inexa *))
 (def .- (compose exa->inexa -))
 (def .+ (compose exa->inexa +))
+
+(def (sum xs)
+  (redu + xs)
+)
 
 (def (pow . xs)
   (if [nilp (cdr xs)]
@@ -3482,7 +3495,7 @@ to-test:
 (def (float->fix flo) (flonum->fixnum [round flo]))
 
 (def (fixnum num)
-  (let ([rnd (round num)])  
+  (let ([rnd (round num)])
     (if [flonum? rnd]
       (flonum->fixnum rnd)
       rnd
@@ -3543,7 +3556,7 @@ to-test:
 
 (def distance
   (case-lam
-    ( [p1 p2] ;(dis '(1 2 3 4) '(2 3 4 5)) ;frm p1 to p2: p2-p1      
+    ( [p1 p2] ;(dis '(1 2 3 4) '(2 3 4 5)) ;frm p1 to p2: p2-p1
       (if [eq (len p1) (len p2)] ;fill 0? ;nil? [_ p2]
         (sqrt
           [apply + (map [lam(x y)(pow(- x y))] p2 p1)] )
@@ -3625,39 +3638,41 @@ to-test:
 ) )
 
 ; modules
- 
+
 ; on lisp
 
 (def (clean-choose)
   (setq *paths* nil)
 )
 
+;warning (T) when no resl
 (def/va (choose% xs [once? T]) ;syt: fail
   (def (~ choices) ;choose
     (if (nilp choices) [fail] ;
       (let/ad choices
         (call-with-current-continuation
           (lam [cc]
-            [push ;
-              (lam () [cc (~ d)])
-              *paths* ]
+            (push ;
+              (lam () [cc (~ d)]) ;
+              *paths* )
             a
   ) ) ) ) ) ;(def fail nil)
-  (call-with-current-continuation ;
-    (lam [cc]
-      (setq fail ;def?
-        (lam ()
-          (if (nilp *paths*) ;
-            (if (once?) F [cc F]) ;can stop when all choices are checked
-            (let ([p1 (car *paths*)]) ;?
-              [setq *paths* (cdr *paths*)] ;
-              (p1)
-  ) ) ) ) ) )
-  [~ xs]
-)
+  (let ([failsym F])
+    (call-with-current-continuation
+      (lam [cc]
+        (setq fail ;def?
+          (lam ()
+            (if (nilp *paths*) ;
+              (if (once?) failsym [cc failsym]) ;can stop when all choices are checked ;
+              (let ([p1 (car *paths*)]) ;?
+                [setq *paths* (cdr *paths*)] ;
+                (p1)
+    ) ) ) ) ) )
+    [~ xs]
+) )
 
 (def/va (true-choose xs [once? T]) ;2~20x@
-  (def (~ choices) ;choose    
+  (def (~ choices) ;choose
     (call-with-current-continuation
       (lam [cc]
         (setq *paths* ;
@@ -3682,7 +3697,7 @@ to-test:
   [~ xs]
 )
 
-(def/va (chooses xs [n 1] [once? T] [rep? F])
+(def/va (chooses xs [n 1] [rep? T] [once? T]) ;
   (def (~ ret xs i)
     (if (> i n) ret
       (let ([c (choose xs once?)])
@@ -4015,7 +4030,7 @@ to-test:
 
 ;(map-all list '(1 2) '(4) '(5 6)) ;~> 4 lists
 (def [map-for-combinations g . xz]
-  (def (~ ret tmp0 xs0 xz)  
+  (def (~ ret tmp0 xs0 xz)
     (def [_ ret tmp xs xz]
       (if (nilp tmp)
         (if (nilp xz)
@@ -4026,7 +4041,7 @@ to-test:
           [_ (cons [cons(car xs)(car tmp)] ret) tmp (cdr xs) xz] ;;
     ) ) )
     [_ ret tmp0 xs0 xz]
-  )  
+  )
   (deep-rev [~ nil (list nil) (car xz) (cdr xz)]) ;remov nil xz
 ) ;4x+ slow
 ;
@@ -4308,7 +4323,7 @@ to-test:
   (let ([p (open-input-file file-name)]) ;
     (let loop ([lst nil] [c (read-char p)])
       (if [eof-object? c]
-        (begin 
+        (begin
           (close-input-port p)
           (list->string (reverse lst)) )
         (loop (cons c lst) (read-char p))
@@ -4335,7 +4350,7 @@ to-test:
       [getter get-bytevector-all] ;<~ read-char
       [ret (getter p)] ) ;
     (close-input-port p)
-    ;(list->str (map int->char 
+    ;(list->str (map int->char
       (bytevector->u8-list ret)
     ;) ) ;
 ) )
@@ -4440,7 +4455,7 @@ to-test:
 (def/va (write-file! file cont [ext-back ".bak"]) ;.last
   (let ([back (str file ext-back)])
     (if (exist-file? file) ;
-      (rename-file! file back) ;      
+      (rename-file! file back) ;
       (make-path (get-path file)) ;
     )
     (write-new-file file cont) ; should delete file first
@@ -4480,7 +4495,7 @@ to-test:
 )
 
 ;(get-file-var "product" "info.txt") ;[] (path/gnu->win "things/special/product/info.txt")
-;= \r\n , 
+;= \r\n ,
 ;[rev? F]
 (def/va (get-file-var s-var s-file [case? T] [line-sep "\n"] [rev? F]) ;how about zhcn? ;\r\n
   (letn
@@ -4509,7 +4524,7 @@ to-test:
     (def (~ s-path)
       (let
         ( [things (ls s-path)]
-          [rel-path (lam (x) [strcat s-path "/" x])] )        
+          [rel-path (lam (x) [strcat s-path "/" x])] )
         (def (_ ret xs)
           (if [nilp xs] ;
             (if (nilp ret) ss ret) ;(if (<= num 0) ret ;
@@ -5162,7 +5177,7 @@ to-test:
       [nilp  x] flg
       [consp x]
         (_ (car x)
-          [_ (cdr x) flg] )      
+          [_ (cdr x) flg] )
       (if (g x) T
         flg
   ) ) )
@@ -5208,6 +5223,37 @@ to-test:
             [_ ret (cons ax tmp) dx mark]
   ) ) ) ) )
   [deep-rev (_ nil nil xs mark)]
+)
+
+(def (divide-before xs mark)
+  (def (_ ret tmp xs ys flg)
+    (if~
+      (nilp xs) ;atomp
+        (cons tmp ret) ;
+      (nilp ys) ;flag
+        [_ ret tmp xs mark T]
+      (let ([ax (car xs)] [ay (car ys)] [dx (cdr xs)] [dy (cdr ys)])
+        (if (eq ax ay) ;tmp
+          (if flg [_ (cons tmp ret) (list ax) dx dy F]
+            [_ ret (cons ax tmp) dx dy flg] )
+          [_ ret (cons ax tmp) dx mark T]
+  ) ) ) )
+  [deep-rev (_ nil nil xs mark F)] ;
+)
+
+(def (divide-before-if xs g) ;-if
+  (def (_ ret tmp xs)
+    (if~
+      (nilp xs) ;atomp
+        (cons tmp ret) ;
+      (let/ad xs
+        (if (g a) ;tmp
+          (if (nilp tmp)
+            [_ ret (list a) d]
+            [_ (cons tmp ret) (list a) d] )
+          [_ ret (cons a tmp) d]
+  ) ) ) )
+  [deep-rev (_ nil nil xs)] ;
 )
 
 ;(divide '(x y m k) '(m k))
@@ -5296,6 +5342,10 @@ to-test:
 
 (load-lib "winmm.dll")
 (defc midi-out-get-num-devs() int midiOutGetNumDevs()) ;
+;
+;(def-ffi (midi-connect dev) (void* midiConnect (void*)) "comment/body: ret bool")
+;midiConnect (HMIDI hmi, HMIDIOUT hmo, LPVOID pReserved)
+;BOOL sndPlaySound (LPCSTR lpszSound, UINT fuSound);
 
 ;(def (main-args) (str-split (GetCommandLineA) spc))
 
@@ -5419,7 +5469,7 @@ to-test:
 (def with-head?
   (case-lam
     ( [xs ys eql] ;(_ '(1 2 3 4) '(1 2/3)) ;-> Y/N
-      (def (_ xs ys)  
+      (def (_ xs ys)
         (if (nilp ys) T ;
           (if (nilp xs) F
             (if [eql (car xs) (car ys)]
@@ -5547,16 +5597,16 @@ to-test:
 
 (setq *tab/jp/key-a-A* ;Xy: y: a i u e o ;z: n
  '( [  a あ ア][  i い イ][  u う ウ][  e え エ][  o お オ] ;ェ
-    [ ka か カ][ ki き キ][ ku く ク][ ke け ケ][ ko こ コ] 
+    [ ka か カ][ ki き キ][ ku く ク][ ke け ケ][ ko こ コ]
     [ sa さ サ][shi し シ][ su す ス][ se せ セ][ so そ ソ]
-    [ ta た タ][chi ち チ][tsu つ ツ][ te て テ][ to と ト] 
-    [ na な ナ][ ni に ニ][ nu ぬ ヌ][ ne ね ネ][ no の ノ] 
+    [ ta た タ][chi ち チ][tsu つ ツ][ te て テ][ to と ト]
+    [ na な ナ][ ni に ニ][ nu ぬ ヌ][ ne ね ネ][ no の ノ]
     [ ha は ハ][ hi ひ ヒ][ fu ふ フ][ he へ ヘ][ ho ほ ホ] ;*
     [ ma ま マ][ mi み ミ][ mu む ム][ me め メ][ mo も モ] ;* mu
     [ ya や ヤ][ yi い イ][ yu ゆ ユ][ ye え エ][ yo よ ヨ] ;-i e
     [ ra ら ラ][ ri り リ][ ru る ル][ re れ レ][ ro ろ ロ] ;*
     [ wa わ ワ][ wi い イ][ wu う ウ][ we え エ][ wo を ヲ] ;-i u e ;* wo
-    [  n ん ン]                                      
+    [  n ん ン]
     [ ga が ガ][ gi ぎ ギ][ gu ぐ グ][ ge げ ゲ][ go ご ゴ]
     [ za ざ ザ][ zi じ ジ][ zu ず ズ][ ze ぜ ゼ][ zo ぞ ゾ] ;
     [ da だ ダ][ di ぢ ヂ][ du づ ヅ][ de で デ][ do ど ド]
@@ -5582,17 +5632,17 @@ to-test:
 
 (setq
   Mu  1 ;~ > Mute
-  Do  [nth *doremi-hz*  1]   
-  Do2 [nth *doremi-hz*  2]   
-  Re  [nth *doremi-hz*  3]   
-  Re2 [nth *doremi-hz*  4]   
-  Mi  [nth *doremi-hz*  5]   
-  Fa  [nth *doremi-hz*  6]   
-  Fa2 [nth *doremi-hz*  7]   
-  So  [nth *doremi-hz*  8]   
-  So2 [nth *doremi-hz*  9]   
-  La  [nth *doremi-hz* 10]   
-  La2 [nth *doremi-hz* 11]   
+  Do  [nth *doremi-hz*  1]
+  Do2 [nth *doremi-hz*  2]
+  Re  [nth *doremi-hz*  3]
+  Re2 [nth *doremi-hz*  4]
+  Mi  [nth *doremi-hz*  5]
+  Fa  [nth *doremi-hz*  6]
+  Fa2 [nth *doremi-hz*  7]
+  So  [nth *doremi-hz*  8]
+  So2 [nth *doremi-hz*  9]
+  La  [nth *doremi-hz* 10]
+  La2 [nth *doremi-hz* 11]
   Si  [nth *doremi-hz* 12] )
 (setq
   .Do  [(rcurry / 2) Do ]    Do.  [(curry * 2) Do ]
@@ -5682,7 +5732,7 @@ to-test:
           (string-divide (get-command-line) " ")
     ) ] )
     (if (cdr-nilp tmp)
-      ".\\" ;          
+      ".\\" ;
       (car (string->path-file ;
           (car (remove ""
               (string-divide
