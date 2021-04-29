@@ -7,6 +7,7 @@
 
   - Update notes:
     - 1.99
+      - W add : rand-seq
       - w upd : demo gen-code
       - v add : ref%, ref*, refs*
       - U upd : range
@@ -2071,6 +2072,11 @@ to-test:
   (let ([rs (rev xs)])
     [_ [list (car rs)] (cdr rs)]
 ) )
+
+;(rand-seq '(+ - * /))
+(def (rand-seq xs)
+  (sort [lam (x y) (eq [random 2] 0)] xs)
+)
 
 ; [duplicates '(123 321 123 321 321 1 2 3)] -> '(123 321 321 ...) -> remov-same
 (def (duplicates xs)

@@ -86,8 +86,6 @@
     [form-fx form-f8]
     ;cons car cdr nilp  null id-last  id rev last  0 1 1+
     [ops `(id id-last null  nilp cdr car cons)] ) ;(cons x)?
-    ;[ops `(null  car cadr cdr nilp car id-last cons)] ) ;?
-    ;[ops `(id null  car cadr cdr nilp car id-last cons)] )
   (clean-choose)
   (letn
     ( ;[data (rand-seq data)] ;
@@ -97,13 +95,14 @@
       [show    (curry map (curry key->val op-mapp))]
       [fs   (chooses ops n-fns T)] ;!
       (main (redu fx fs)) ;!
-      ;[resl (try (= out (main main nil in)))] ;?
       [resl (try (= out (main in)))] ;?
       [bool (if (try-fail? resl) F resl)] )
-    (if bool ;(show fs)
+    (if bool
       (form-fx (show fs)) ;
       [fail] ;fail-and-goon
 ) ) )
+
+;(load (str *lib-path* "demo/gen-code.sc"))
 
 ;(cost (code-for '(1 2) '2))     ;150 ms
 ;(cost (code-for '(1 2) '(2 1))) ;150 ms
