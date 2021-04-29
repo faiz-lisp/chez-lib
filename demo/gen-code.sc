@@ -5,6 +5,18 @@
 ;mychez {self}.sc
 ;(load "c:/path/to/chez-lib/lib.sc")
 
+;--
+
+(def (null . paras)
+  nil
+)
+
+(def (id-last . xs)
+  (last xs)
+)
+
+;--
+
 (def (form-f8 fs)
   (let
     ( [f (nth fs 1)]

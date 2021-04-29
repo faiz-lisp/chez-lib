@@ -1,5 +1,5 @@
 
-(define (version) "Chez-lib v1.99") ;V
+(define (version) "Chez-lib v1.99") ;
 (define (git-url) "https://gitee.com/faiz-xxxx/chez-lib.git")
 
 #|
@@ -7,7 +7,7 @@
 
   - Update notes:
     - 1.99
-      - V add : demo gen-code
+      - w upd : demo gen-code
       - v add : ref%, ref*, refs*
       - U upd : range
       - T add : chg-nth, chg-ref-val
