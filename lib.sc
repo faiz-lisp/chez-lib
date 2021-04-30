@@ -7,6 +7,7 @@
 
   - Update notes:
     - 1.99
+      - x Upd : code-for \n add : next
       - W add : rand-seq
       - w upd : demo gen-code
       - v add : ref%, ref*, refs*
@@ -2090,6 +2091,19 @@ to-test:
   ;[remov-same
     (_ xs nil nil)
   ;]
+)
+
+(def/va (next xs x [eq eq])
+  (def (~ xs flg)
+    (if~
+      (nilp xs) nil
+      flg
+        (car xs)
+      (eq x (car xs))
+        (~ (cdr xs) T)
+      (~ (cdr xs) flg)
+  ) )
+  (~ xs F)
 )
 
 (def [do-for xs f-xs f-xs-ret]
