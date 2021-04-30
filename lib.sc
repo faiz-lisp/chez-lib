@@ -7,7 +7,8 @@
 
   - Update notes:
     - 1.99
-      - x Upd : code-for \n add : next
+      - X simp: readme
+      - x Upd : code-for\n    add : next
       - W add : rand-seq
       - w upd : demo gen-code
       - v add : ref%, ref*, refs*
