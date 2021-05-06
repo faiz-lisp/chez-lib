@@ -51,6 +51,7 @@
       ) )
       (_ (g x) X F)
 ) ) )
+
 (def (form-f7.2 fs) ;for list of 2 paras
   (form-f8 (cons (car fs) [cons 'rev (cdr fs)]))
 )
@@ -60,7 +61,7 @@
 
 ;(code-for '(a b) '(b a))
 (def/va
-  (code-for in out [fx f7.2] [n-fns 7] [form-fx form-f7.2] [= eql]
+  (code-for in out [fx f7.2] [n-fns 7] [form-fx form-f7.2]
     ;null id-last id
     ;cons rev
     ;car cadr cdr last
@@ -68,13 +69,14 @@
     ;eq = eql
     ;0 1 1+
     ;`(car rev cadr nilp id-last id cons) ;cdr? null?
-    [ops `(rev  id id-last null  nilp cdr cadr car cons)] ) ;rev last
+    [ops `(rev null  id id-last  nilp cdr cadr car cons)]
+    [= eql] ) ;rev last
     ;[ops `(id id-last null  nilp cdr car cons)] ) ;(cons x)?
   (clean-choose)
   (reset-randseed)
   (letn
-    ( ;(ops  (rand-seq ops))
-      [ops     (rev ops)]
+    ( (ops  (rand-seq ops))
+      ;[ops     (rev ops)]
       [op-syms  ops] ;!
       [ops     (map ev  op-syms)] ;!
       [op-mapp (zip ops op-syms)]

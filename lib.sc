@@ -7,6 +7,7 @@
 
   - Update notes:
     - 1.99
+      - y Fix : choose
       - X simp: readme
       - x Upd : code-for\n    add : next
       - W add : rand-seq
@@ -31,7 +32,7 @@
       - F add : true-choose, str-trim-all
       - D upd : case (compose); fix : gotcha;
       - d upd : church
-      - C add : choose, *paths*, rlist
+      - C add : *paths*, rlist
       - B upd : files/cont
       - a add : (collect 10 (do-sth))
       - ~ add : int<->str/system, digit<->char, global vars
@@ -3666,7 +3667,7 @@ to-test:
   (setq *paths* nil)
 )
 
-;warning (T) when no resl
+;F when no resl
 (def/va (choose% xs [once? T]) ;syt: fail
   (def (~ choices) ;choose
     (if (nilp choices) [fail] ;
@@ -3684,7 +3685,7 @@ to-test:
         (setq fail ;def?
           (lam ()
             (if (nilp *paths*) ;
-              (if (once?) failsym [cc failsym]) ;can stop when all choices are checked ;
+              (if once? failsym [cc failsym]) ;can stop when all choices are checked
               (let ([p1 (car *paths*)]) ;?
                 [setq *paths* (cdr *paths*)] ;
                 (p1)
@@ -3710,7 +3711,7 @@ to-test:
       (setq fail ;
         (lam ()
           (if (nilp *paths*)
-            (if (once?) F [cc F])
+            (if once? F [cc F])
             (let ([p1 (car *paths*)])
               [setq *paths* (cdr *paths*)]
               (p1) ;
