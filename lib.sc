@@ -7,7 +7,8 @@
 
   - Update notes:
     - 1.99
-      - y Fix : choose
+      - Y fix : files/cont: more?
+      - y Fix : choose: once?
       - X simp: readme
       - x Upd : code-for\n    add : next
       - W add : rand-seq
@@ -2984,7 +2985,7 @@ to-test:
         ) )
         (cons s [_ (+ s p)]) ;
     ) )
-    ( [s e f p]
+    ( [s e f p] ;n
       (let ([g (if [>= (f p) 0] > <)]) ;*|/
         (def (_ i)
           (if (g i e) nil
@@ -2996,7 +2997,7 @@ to-test:
 ) ) )
 
 ;(range/total 30 4 ./ 2 0.1) ;
-(def/va (~range/total total [s 0] [f +] [p 1] [e nil]) ; more wont make slower
+(def/va (~range/total total [s 0] [f +] [p 1] [e nil]) ;n ;range-n
   (def (_ ret res x) ;rest-->0
     (let ([res (- res x)])
       (if [< res 0] ret
@@ -4531,6 +4532,7 @@ to-test:
       conv ;
 ) ) )
 
+;to test: A B d-C/E,d-F/G H d-D/I,J,d-K/L
 ;(file/string ss {num 1} [s-path "."] [case? T] [show-ori-when-fail? T] [chk-ext ] [tar-format id])
 (def/va
   (files/cont ss
@@ -4554,7 +4556,9 @@ to-test:
               (if [folder? (rel-path a)]
                 (let ((resl [~ (rel-path a)])) ;
                   (if [consp resl] ;
-                    (append resl ret) ;[_ (append resl ret) d (1- num)]
+                    (if more?
+                      [_ (append resl ret) d] ;
+                      (append resl ret) )
                     [_ ret d]
                 ) )
                 (if [chk-ext (file-ext a)] ; "xlsx" ;[chk-ext (rcurry mem? '["h" "cpp"])]
@@ -4563,7 +4567,7 @@ to-test:
                       [bool (str-exist? (conv cont) ss2)] ) ;one file search n
                     (if bool
                       (if more?
-                        [_ (cons (rel-path a) ret) d]
+                        [_ (cons (rel-path a) ret) d] ;
                         (cons (rel-path a) ret) )
                       [_ ret d]
                   ) )

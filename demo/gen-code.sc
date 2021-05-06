@@ -5,6 +5,11 @@
 ;mychez {self}.sc
 ;(load "c:/path/to/chez-lib/lib.sc")
 
+#|
+= todo
+  - 2 in 2 out
+|#
+
 ;--
 
 (def (null . paras)
