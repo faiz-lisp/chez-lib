@@ -54,7 +54,7 @@
             (~ ret x) ;here, u may think of how to expand if-else at pos of else with ano fx glob func
           (_ (l (car x) ret) (cdr x) T)
       ) )
-      (_ (g x) X F)
+      (_ (g x) X F) ;2
 ) ) )
 
 (def (form-f7.2 fs) ;for list of 2 paras
@@ -67,14 +67,14 @@
 ;(code-for '(a b) '(b a))
 (def/va
   (code-for in out [fx f7.2] [n-fns 7] [form-fx form-f7.2]
-    ;null id-last id
-    ;cons rev
+    ;null id-last id zero one
+    ;cons rev append
     ;car cadr cdr last
     ;nilp atomp consp
-    ;eq = eql
-    ;0 1 1+
+    ;eq = eql >
+    ;1+ 1- + -
     ;`(car rev cadr nilp id-last id cons) ;cdr? null?
-    [ops `(rev null  id id-last  nilp cdr cadr car cons)]
+    [ops `(rev  null id id-last nilp cdr cadr car cons)]
     [= eql] ) ;rev last
     ;[ops `(id id-last null  nilp cdr car cons)] ) ;(cons x)?
   (clean-choose)
@@ -82,7 +82,7 @@
   (letn
     ( (ops  (rand-seq ops))
       ;[ops     (rev ops)]
-      [op-syms  ops] ;!
+      [op-syms ops] ;!
       [ops     (map ev  op-syms)] ;!
       [op-mapp (zip ops op-syms)]
       [show    (curry map (curry key->val op-mapp))]
@@ -99,7 +99,7 @@
 
 ;(cost (code-for '(1 2) '2))     
 ;(cost (code-for '(1 2) '(2 1))) 
-;(cost (code-for '([a s][d f]) '(a s d f) f7.2 7 form-f7.2))
+;(cost (code-for '([a s][d f]) '(a s d f) f7.2 7 form-f7.2)) ;~<= 7s
 ;(cost (code-for '([a s][d f]) '(a s d f) f8 8 form-f8))
 ;(setq next2 [car (cost (code-for '([a s d f] s) 'd f7.2 7 form-f7.2))])
 

@@ -7,9 +7,9 @@
 
   - Update notes:
     - 1.99
+      - z add : file/cont, keys->vals, flip, fill-lhs/rhs, rgb<->565;\n Fix : groups, arb-group
       - Y fix : files/cont: more?
       - y Fix : choose: once?
-      - X simp: readme
       - x Upd : code-for\n    add : next
       - W add : rand-seq
       - w upd : demo gen-code
@@ -21,7 +21,6 @@
       - r upd : demo maze
       - Q upd : str-repl%, replace% can CRUD
       - O add : (do-for xs conv deconv)
-      - N add : chooses with [repeat? F]; upd : choose -> with [once? T]
       - n add : -=
       - M upd : demo play-piano
       - L add : elem-freq, mem?-and-do
@@ -55,26 +54,25 @@
     - 1.97
       - w Add : (deep& rev char-downcase '((#\a #\s) #\D)) ~> '(#\d (#\s #\a))
       - v Add : (deep-exist-match? [lam (x) (cn-char? x)] '((#\我) #\3)) ~> T
-      - Q Add : (trim '(1 2 1 2 1 3 1 2) '(1 2)) ~> '(1 3)
+      - Q Add : (trim '(1 2 1 2 1 1 2 3 1 2) '(1 2)) ~> '(1 1 2 3)
       - O upd : (beep [456] [500]);\nadd : getcwd;
       - N add : def-ffi, shell-execute
       - L fix : for: map -> for-each; upd : tail=list-tail; add : tail%
       - h Add : (doc-add '(load-lib str)) (doc load-lib)~>'(load-lib str)
       - c Add : htab-:kvs,keys,values
       - ~ Add : (doc-ls co) -> documentable-keys -> '(cons cond); house keeping;
-    - 1.96 upd  def/doc, doc; Added doc-paras;
-    - 1.96 Add  docs
-    - 1.95 Upd  ./
-    - 1.95 Add  fold (_ f x xs), foldl-n (_ n fn xs), infix->prefix (_ xs)
-    - 1.94 Add  self-act (_ pow 2 3) => (pow 2 2 2), rev-calc (_ pow 4) => 2
+    - 1.96 Add: docs, def/doc, doc, doc-paras
+    - 1.95 Upd: fold (_ f x xs), foldl-n (_ n fn xs), infix->prefix (_ xs), ./
+    - 1.94 Add: self-act (_ pow 2 3) => (pow 2 2 2), rev-calc (_ pow 4) => 2
     - 1.93 Simp algo: fast-expt, (_ g x [n 1])
-    - 1.92 Upd  api-ls: symbol -> macro
-    - 1.91 add  logic for dividing vowels in japanese
+    - 1.92 Upd: api-ls: symbol -> macro
+    - 1.91 add: logic for dividing vowels in japanese
 
   - Suffixes:
     - @ slow / bad
     - % theoretic / internal / paras->list
     - %B big / cost more memory space
+    - %win
     - ~ just faster
     - * optimized
     - ! (forced and) with side-effect
@@ -405,6 +403,7 @@
 
 (ali api-ls api-with)
 
+(alias hex->int hex->dec)
 (ali make-file!% make-file!%/win)
 (ali make-path make-path/win)
 
@@ -510,7 +509,7 @@
 ) )
 
 (defsyt setq
-  [(_ a) (set! a (void))]
+  ((_ a) (set! a (void)))
   ((_ a b)
     (bgn (set! a b) (if *will-ret* a))
   )
@@ -528,8 +527,6 @@
       (set! x (+ x . xs))
       x
 ) ) )
-
-;-----------------------------------------
 
 (defsyt -=
   ( [_ x . xs]
@@ -638,9 +635,9 @@
   asd
   ((a 1) (s s) (d 3) (f f))
   ((a 1) (s s) (d 3) (f f))
-  (a d) ;
+  (a d) 
   ()
-  (a d) ;
+  (a d) 
   (((a s d f) (li a s d f)))
   ()
   () )
@@ -673,11 +670,11 @@ to-test:
 ;_ g, Ori-pairs para-pairs; main-cnt=(A D), Ori-tmp-cnt tmp-cnt=(); Ret, lamPara=[] bodyPara=[]
 
 #|
-(try3
+(def/va%3
   asd
   ((a 1) s (d 3) f)
   ((a 1) (s s) (d 3) (f f))
-  [a d] ;
+  [a d] 
   (li a s d f))
 |#
 (defsyt def/va%3
@@ -694,7 +691,7 @@ to-test:
 ) ) )
 
 #|
-(try2 asd ((a 1) s (d 3) f) ((a 1) s (d 3) f)
+(def/va%2 asd ((a 1) s (d 3) f) ((a 1) s (d 3) f)
   () ()
   (li a s d f))
 |#
@@ -2031,12 +2028,12 @@ to-test:
 )
 
 ;(key->val '([a 1][b 2][c]) 'c)
-(def/va (key->val xz x [= eql] [f-case id] [defa? F] [defa nil])
+(def/va (key->val xz x [= eql] [f-case id] [defa? F] [defa nil]) ;
   (def (_ xz)
     (if (nilp xz)
       (if defa? defa x)
       (let ([xs (car xz)] [yz (cdr xz)])
-        (if [= (f-case x) (car xs)] ;
+        (if [= (f-case x) (car xs)] ;src-case
           [if (cdr-nilp xs) nil (cadr xs)] ;
           [_ yz]
   ) ) ) )
@@ -2082,6 +2079,24 @@ to-test:
   (sort [lam (x y) (eq [random 2] 0)] xs)
 )
 
+;(keys->vals '([a 1] [b 2] [c 3] [d 4]) '(c d a b)) ;-> '(3 4 1 2)
+(def/va (keys->vals KVs Ks [= eql] [key-case id] [defa? F] [defa nil]) ;
+  (let ([conv (lam (k) (if defa? defa k))]) ;
+    (def (_ ret kvs ks)
+      (if~ (nilp ks) ret
+        (let ([k(car ks)][dks(cdr ks)])
+          (if~ (nilp kvs)
+            [_ (cons [conv k] ret) KVs dks] ;or defa
+            (let ([kv(car kvs)][dkvs(cdr kvs)])
+              (if~ [= (key-case k) (car kv)] ;src-case
+                (if (cdr-nilp kv)
+                  [_ (cons [conv  k] ret) KVs dks] ;
+                  [_ (cons (cadr kv) ret) KVs dks] )
+                [_ ret dkvs ks]
+    ) ) ) ) ) )
+    [rev (_ nil KVs Ks)]
+) )
+
 ; [duplicates '(123 321 123 321 321 1 2 3)] -> '(123 321 321 ...) -> remov-same
 (def (duplicates xs)
   (def (_ xs sml ret)
@@ -2112,6 +2127,32 @@ to-test:
 (def [do-for xs f-xs f-xs-ret]
   (f-xs-ret xs [f-xs xs])
 )
+
+(def (fill-rhs-nx xs n x)
+  (append xs (xn->list x n))
+)
+
+(def (fill-lhs-nx xs n x)
+  (append (nx->list n x) xs)
+)
+
+(def (fill-rhs xs x n)
+  (letn
+    ( [ln (len xs)]
+      [m  (- n ln)] )
+    (if (> m 0)
+      (fill-rhs-nx xs m x)
+      xs
+) ) )
+
+(def (fill-lhs xs x n)
+  (letn
+    ( [ln (len xs)]
+      [m  (- n ln)] )
+    (if (> m 0)
+      (fill-lhs-nx xs m x)
+      xs
+) ) )
 
 (def find-x-match
   (case-lam
@@ -3035,11 +3076,11 @@ to-test:
   (apply echo xs) (newln) ;
 )
 
-(def [read-expr xs] ;
+(def [read-expr . xs]
   (let
     ( (p
         (open-input-string
-          (redu~ strcat
+          (redu~ strcat ;
             `["(begin " ,@xs ")"] ;
     ) ) ) ) ;ign spc between
     [read p]
@@ -3054,7 +3095,7 @@ to-test:
     (read p)
 ) )
 
-(def (evs . xs) (ev [redu read-expr xs]))
+(def (evs . xs) (ev [redu read-expr xs])) ;
 
 (defn chars-replace-x (cs x xx)
   (defn _ (cs x xx ret)
@@ -3363,10 +3404,15 @@ to-test:
 
 ; convert
 
-(def (dec->hex dec) (fmt "0x~x" dec))
+(def (dec->hex dec) (fmt "0x~x" dec)) ;~2x
 (def (hex->dec hex) (evs (str-repl hex "0" "#" 1))) ;@
 
 ; API
+
+;(_ '([(1 2)(3 4)][(5 6)(7 8)])) ;-> '(r[r(1 2)r(3 4)]r[r(5 6)r(7 8)])
+(def (flip xs)
+  (map deep-rev xs)
+)
 
 ; demo
 
@@ -3435,6 +3481,27 @@ to-test:
     (elem-freq% xs eq)
     [lam (x y) (> (cadr x) (cadr y))]
 ) )
+
+;(565->rgb (hex->dec "0xe7c1")) ;-> '(r g b)
+(def (565->rgb iCol) ;5 6 5->8 8 8
+  (letn
+    ( [arb (arb-group [fill-lhs (str->list (int->str/system iCol 2)) #\0 16] 5 6 5)] ;15/16? from head/tail?
+      [xz  (map (rcurry fill-rhs #\0 8) arb)] ) ;
+    (map
+      [flow list->str (rcurry str->int/system 2)]
+      xz
+) ) )
+
+(def/va (rgb->565 rgb [out-hex? F])
+  (let-values
+    ([(r g b) (redu values rgb)])
+    (letn
+      ( [r5 (pow 2 [- 5 8])] [r6 (pow 2 [- 6 8])] ;
+        [conv (lam (rat n) [fixnum (* rat n)])]
+        [resl (+ (conv r5 b) (* (conv r6 g) [pow 2 5]) (* (conv r5 r) [pow 2 11]))] ;
+        [resl (if out-hex? (str "0x" (int->str/system resl 16)) resl)] )
+      resl
+) ) )
 
 ; math
 
@@ -3702,7 +3769,7 @@ to-test:
           [append *paths* ;
             (map ;
               (lam (choice)
-                (lam () [cc choice]) ) ;
+                (lam () [cc choice]) )
               choices
         ) ] )
         [fail]
@@ -3722,11 +3789,11 @@ to-test:
 
 (def/va (chooses xs [n 1] [rep? T] [once? T]) ;
   (def (~ ret xs i)
-    (if (> i n) ret
+    (if (fx> i n) ret
       (let ([c (choose xs once?)])
         (~ (cons c ret)
           (if rep? xs [remov-1 c xs]) ;
-          (1+ i)
+          (fx1+ i)
   ) ) ) )
   (~ nil xs 1) ;seq?
 )
@@ -4014,28 +4081,29 @@ to-test:
     (rev [_ nil xs]) ;
 ) )
 
-(def (arb-group xs . ns) ;arbitrarily/mutable
-  (def (_ xs n ms tmp ret) ;
+(def (arb-group xs . ns) ;arbitrarily: (_ xs 5 6 5)
+  (def (_ xs n ms tmp ret) ;ret tmp xs n ns
     (if (nilp xs)
-      (cons [rev tmp] ret)
+      (cons tmp ret) ;
       (let/ad xs
         (if (nilp ms)
           (if (eq 0 n)
-            (cons [rev tmp] ret)
+            (cons tmp ret)
             [_ d (1- n) nil (cons a tmp) ret] )
           (if (eq 0 n)
             [_ xs (car ms) (cdr ms) nil (cons tmp ret)]
             [_ d (1- n) ms (cons a tmp) ret]
   ) ) ) ) )
-  [rev (_ xs (car ns) (cdr ns) nil nil)]
+  [deep-rev (_ xs (car ns) (cdr ns) nil nil)] ;
 )
 
-;divide-groups into?
+;(groups (range 32) 2 8)
 (def (groups xs . ns) ;
   (def (_ xs ns)
     (if (nilp ns) xs
-      (map (rcurry _ [cdr ns]) ;
+      (_
         (group xs [car ns])
+        [cdr ns]
   ) ) )
   (_ xs ns)
 )
@@ -4176,36 +4244,38 @@ to-test:
   (if (< n 0) 0
     (_ n)
 ) )
-;(cost (fib0 42)) ;realtime = 1.111~1.173 s
+;(cost (fib0 42)) ;realtime = 1.111~1.176 s
 
 (def (fib1 n) ;gmp: (fib 1E) just 1s
   ;(let ([st(clock)] [1st F])
-    (def_ (fibo1 ret nex n)
-      (if (< n 1) ret
+    (def (_ ret nex n)
+      (if (fx< n 1) ret
         ; (bgn
           ; (if [=0 (%[- (clock) st]100)]
             ; (when 1st (setq 1st F) (echo ".") )
             ; (setq 1st T) )
-          [_ nex (+ nex ret) (1- n)]
+          [_ nex (+ nex ret) (fx1- n)]
     ) ) ;)
-    (fibo1 0 1 n)
+    (_ 0 1 n)
 ) ;)
+;(cost (chk 1000000 fib1 42)) ;-> 80ms
 
 (def (fib n)
   (def (fibo pre pos n)
     (caar
       (matrix-mul  ;
-        (if [>0 n] ; or ret: if odd? n: positive, negative;
+        (if [fx> n 0] ; or ret: if odd? n: positive, negative;
           (matrix-pow `([ 0  1]
                         [ 1  1]) n) ;matrix may slower than paras
           (matrix-pow `([-1  1]
-                        [ 1  0]) (- n)) )
+                        [ 1  0]) (fx- n)) )
         `([,pre]
           [,pos])
   ) ) )
   (fibo 0 1 n)
 )
 ;(elapse(fib 200000)) ;=> elapse = 0.082 s
+;(cost (chk 100000 fib 42)) ;-> 225ms
 
 (def (fac n) ;how to be faster, such as fast-expt
   (def (_ ret n)
@@ -4523,7 +4593,7 @@ to-test:
 (def/va (get-file-var s-var s-file [case? T] [line-sep "\n"] [rev? F]) ;how about zhcn? ;\r\n
   (letn
     ( [conv (if case? id str-downcase)]
-      [f (if rev? val->key key->val)]
+      [f (if rev? val->key key->val)] ;eql
       [cont (conv (load-file s-file))]) ;
     (f ;
       (map [compose (rcurry str-divide "=") str-trim-head] ;
@@ -4532,10 +4602,18 @@ to-test:
       conv ;
 ) ) )
 
-;to test: A B d-C/E,d-F/G H d-D/I,J,d-K/L
 ;(file/string ss {num 1} [s-path "."] [case? T] [show-ori-when-fail? T] [chk-ext ] [tar-format id])
 (def/va
   (files/cont ss
+    [s-path "."]
+    [case? T] ;[show-ori-when-fail? T]
+    [more? T]
+    [chk-ext (rcurry mem? '("h" "cpp" "txt" "md"))]
+    [tar-format id] )
+  (file/cont ss s-path case? more? chk-ext tar-format)
+)
+(def/va
+  (file/cont ss
     [s-path "."]
     [case? T] ;[show-ori-when-fail? T]
     [more? F]
