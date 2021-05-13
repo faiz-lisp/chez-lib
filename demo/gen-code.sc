@@ -12,6 +12,10 @@
 
 ;--
 
+(def (one . paras)
+  1
+)
+
 (def (null . paras)
   nil
 )
@@ -40,7 +44,7 @@
     (let ([X (m (f x))])
       (def (~ ret x)
         (if~
-          (nilp (h x))
+          (nilp (h x)) ;
             (k (j ret) (i x))
           (eql X x) ;@
             (k (j ret) (i x))
@@ -48,7 +52,7 @@
       ) )
       (def (_ ret x ini?)
         (if~
-          (nilp (h x))
+          (nilp (h x)) ;
             (k (j ret) (i x))
           ini?
             (~ ret x) ;here, u may think of how to expand if-else at pos of else with ano fx glob func
@@ -75,7 +79,10 @@
     ;1+ 1- + -
     ;`(car rev cadr nilp id-last id cons) ;cdr? null?
     [ops `(rev  null id id-last nilp cdr cadr car cons)]
-    [= eql] ) ;rev last
+    ;[ops `(fx* fx1- one eq null id id-last)]
+    [= eql]
+    ;[= eq]
+  ) ;rev last
     ;[ops `(id id-last null  nilp cdr car cons)] ) ;(cons x)?
   (clean-choose)
   (reset-randseed)

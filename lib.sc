@@ -1,12 +1,13 @@
 
 (define (version) "Chez-lib v1.99") ;
-(define (git-url) "https://gitee.com/faiz-xxxx/chez-lib.git")
+(define (git-url) "https://gitxx.com/faiz-xxxx/chez-lib.git")
 
 #|
 == Chez-lib.sc (mainly for Windows NT) - written by Faiz
 
   - Update notes:
     - 1.99
+      - Z add: head-tail%, mysort
       - z add : file/cont, keys->vals, flip, fill-lhs/rhs, rgb<->565;\n Fix : groups, arb-group
       - Y fix : files/cont: more?
       - y Fix : choose: once?
@@ -152,6 +153,8 @@
     - seems that newlisp call scheme and c will be more free.
     - to optimize
     - to fix
+      - don't overwrite chez api
+        - assert cxxxxr command-line break collect collections delay div exp expand gcd xor odd?
       - save-file
       - replace
 
@@ -1419,8 +1422,9 @@ to-test:
 ;(chk 10 cdr '(1 2 3))
 (defm (api? x) (bool [mem? 'x (syms)]))
 
+;https://cisco.github.io/ChezScheme/csug9.5/summary.html#./summary:h0
 (defm (api-with x) ;(_ string) ;-> '(xx-string-xx string-xx blar blar)
-  (filter (rcurry with-sym? 'x) (syms))
+  (filter (rcurry with-sym? 'x) [syms])
 )
 ;complex-syntax
 
@@ -1916,13 +1920,13 @@ to-test:
   (apply append (remov-nil xz))
 )
 
-
+;(append/rev-head (range 5 1 - 1) (range 6 10))
 (def (append/rev-head xs ys) ;rev xs then append
-  (def (_ xs ys)
+  (def (_ ys xs)
     (if (nilp xs) ys
-      [_ (cdr xs) (cons(car xs)ys)]
+      [_ (cons (car xs) ys) (cdr xs)]
   ) )
-  (_ xs ys)
+  (_ ys xs)
 )
 
 ; (defn conz! (xs . ys) ;->syn
@@ -2027,6 +2031,22 @@ to-test:
   (conz xs z) ;a bit faster than above
 )
 
+;(head-tail (range 10) 6) ;-> '([0 1 2 3 4 5] [6 7 8 9])
+(def (head-tail% xs m)
+  (def (_ tmp xs m) ;xs tmp m
+    (if~
+      (or [nilp xs] [fx< m 1])
+        (list [rev tmp] xs) ;
+      (let/ad xs
+        [_ (cons a tmp) d (fx1- m)] ;consp
+  ) ) )
+  (_ nil xs m)
+)
+
+(def (head-tail xs m)
+  (list (head xs m) (tail xs m))
+)
+
 ;(key->val '([a 1][b 2][c]) 'c)
 (def/va (key->val xz x [= eql] [f-case id] [defa? F] [defa nil]) ;
   (def (_ xz)
@@ -2125,7 +2145,7 @@ to-test:
 )
 
 (def [do-for xs f-xs f-xs-ret]
-  (f-xs-ret xs [f-xs xs])
+  (f-xs-ret xs [f-xs xs]) ;
 )
 
 (def (fill-rhs-nx xs n x)
@@ -2755,10 +2775,10 @@ to-test:
   (redu - [map char->int (list x #\0)])
 )
 
-;(num->int/system num 36~62)
+;(num->int/system num 36~62) ;numeration/num<->str
 (def/va (int->str/system num [scale 10] [chars (append *chs-numbers* *chs-Letters*)])
   (def (_ ret num)
-    (if [=0 num] ret
+    (if [eq 0 num] ret
       (let
         ( [rem (% num scale)]
           [quot (quotient num scale)] )
@@ -2985,15 +3005,23 @@ to-test:
 (def (call g . xs) (redu g xs)) ;
 (def (rcall% g . xs) (redu g (rev xs)))
 
-(def/va (member?% x xs [= eql] [get id]) ;'([][])
-  (def (_ xs)
-    (if~
-      [nilp xs] F
-      [= x [get (car xs)]] xs ;
-      (_ (cdr xs))
-  ) )
-  (_ xs)
-)
+;eg doer: do-for xs car (lam(xs x)[cons [do-for x cadr (lam(xs x)[list (car xs) [fx+ x X]])] (cdr xs)])
+;(member?%2 'x '(y x z))
+(def/va (member?% X xs [= eql] [doer id] [full-info? F]) ;member (member? member?%) mem? mem?%
+  (letn
+    ( [ret0 (lam (v t) v)]
+      [ret1 (lam (v t) [list v (rev t)])]
+      [ret-er (if full-info? ret1 ret0)] ) ;
+    (def (_ tmp xs) ;
+      (if~
+        [nilp xs]
+          (ret-er F tmp) ;
+        [= X (car xs)]
+          (ret-er (doer xs) tmp) ;
+        [_ (cons [car xs] tmp) (cdr xs)] ;collector @
+    ) )
+    (_ nil xs)
+) )
 
 (def (echo% sep . xs) ;(_ xs [sep " "]) ;voidp
   (def (_ sep xs)
@@ -3009,6 +3037,7 @@ to-test:
 ) )
 (def (echo . xs) (apply echo% (cons " " xs))) ;
 
+;test (range 10 1)
 (def range ;-> (0 ... n-1)
   (case-lam
     ( [s e] ;~
@@ -3482,10 +3511,10 @@ to-test:
     [lam (x y) (> (cadr x) (cadr y))]
 ) )
 
-;(565->rgb (hex->dec "0xe7c1")) ;-> '(r g b)
+;(565->rgb (hex->dec "0xe7c1")) ;-> '(r g b) ;c1e7?
 (def (565->rgb iCol) ;5 6 5->8 8 8
   (letn
-    ( [arb (arb-group [fill-lhs (str->list (int->str/system iCol 2)) #\0 16] 5 6 5)] ;15/16? from head/tail?
+    ( [arb (arb-group [fill-lhs (str->list (int->str/system iCol 2)) #\0 16] 5 6 5)] ;arb from head/tail?
       [xz  (map (rcurry fill-rhs #\0 8) arb)] ) ;
     (map
       [flow list->str (rcurry str->int/system 2)]
@@ -3695,17 +3724,17 @@ to-test:
 
 ;(rev-calc pow target) =(checker)=> x
 ;(cube-root 27.) is very slow
-(def/va (rev-calc fx tar [= ~=]) ;[exa? T] ;todo: f-xs=y... for +-*/
+(def/va (rev-calc fx tar [= ~=] [x0 2]) ;[exa? T] ;todo: f-xs=y... for +-*/
   (def (_ nex x pre)
     (let ([resl (fx x)]) ;
       (if~
-        [= tar resl] ;(inexa
+        [= resl tar] ;(inexa
           x ;)
         [> resl tar] ;stru>
           [_ x (avg pre x) pre] ;
         [_ nex (avg nex x) x]
   ) ) )
-  [_ tar 2 0] ;
+  [_ tar x0 0] ;
 )
 
 ; end of math
@@ -3851,16 +3880,18 @@ to-test:
         (if b2 3 s) )
       (fx- i (if b2 1 0))
 ) ) )
-(def primes
+(def primes ;todo _ s e
   (lam [s n]
     (def (~ s n ret)
-      (if (fx< n 1) ret
-        (if (prim-num? s) ;?
+      (if~
+        (fx< n 1) ret ;
+        (prim-num? s) ;?
           (~ (+ 2 s) (fx1- n) (cons s ret))
-          (~ (+ 2 s) n ret)
-    ) ) )
-    (let( [b2  (< s 3)]
-          [b (even? s)] ) ;
+        (~ (+ 2 s) n ret)
+    ) )
+    (let
+      ( [b2  (< s 3)]
+        [b (even? s)] ) ;
       (~
         (if b (fx1+ s)
           (if b2 3 s) )
@@ -3877,7 +3908,7 @@ to-test:
       (def (_ num n)
         (let ([quot (quotient num m)]) ;@ 1 2 4 2 1
           (if [< quot 1] n
-            [_ quot (1+ n)]
+            [_ quot (1+ n)] ;fx
       ) ) )
       (_ num 1) )
     ([num] (n-digits num 10))
@@ -4197,14 +4228,14 @@ to-test:
 (def/va (fast-expt g x [n 1]) ;not for pow
   (def (_ n)
     (if~
-      [=   n 1] x ;
-      [fx> n 1] ;
+      [> n 1] ;fx>= 2
         (letn
           ( [m (_ [>> n 1])]
             [y (g m m)] )
-          (if (fxeven? n) y
+          (if (even? n) y ;fx
             [g y x]
         ) )
+      [= n 1] x ;eq
       (error "n in fast-expt, should be >= 1" n)
   ) )
   (_ n)
@@ -4261,7 +4292,7 @@ to-test:
 ;(cost (chk 1000000 fib1 42)) ;-> 80ms
 
 (def (fib n)
-  (def (fibo pre pos n)
+  (def (fibo pre pos n) ;prev next cnt
     (caar
       (matrix-mul  ;
         (if [fx> n 0] ; or ret: if odd? n: positive, negative;
@@ -4277,18 +4308,19 @@ to-test:
 ;(elapse(fib 200000)) ;=> elapse = 0.082 s
 ;(cost (chk 100000 fib 42)) ;-> 225ms
 
-(def (fac n) ;how to be faster, such as fast-expt
+(def (fac n) ;how to be faster, such as gmp
   (def (_ ret n)
-    (if (< n 2) ret
-      [_ (* ret n) (1- n)]
+    (if (eq n 1) ret
+      [_ (* ret n) (fx1- n)]
   ) )
   [_ 1 n]
 )
-;(elapse(fac 50000)) ;=> elapse = 1.559~1.567 s
+;(elapse(fac 50000)) ;=> elapse = 1.533~1.566 s
 
-(defn round% (x)
+(def (round% x)
   (let ([f (floor x)])
-    (if [>= (- x f) 0.5] (1+ f)
+    (if [>= (- x f) 0.5]
+      (1+ f)
       f
 ) ) )
 (def myround
@@ -4868,11 +4900,11 @@ to-test:
   ) ) ) )
   (_ xs)
 )
-(defn filter2 (g xs) ;~> '(tagets rests)
+(def (filter2 g xs) ;~> '(tagets rests)
   (def (_ xs ll rr) ; ll rr
     (if (nilp xs)
-      (li ll rr) ;pair
-      (let ([a (car xs)][d (cdr xs)])
+      (list ll rr) ;pair
+      (let/ad xs
         (if (g a)
           [_ d (cons a ll) rr]
           [_ d ll (cons a rr)] ;
@@ -5122,8 +5154,23 @@ to-test:
     ([xs]   (qsort xs <))
 ) )
 
+; (dont-return!) (setq a (rand-seq (range 1000000)))
+; (elap (mysort a)) (elap (qsort a fx>)) (elap (msort a fx>))
+(def/va (mysort xs [g fx>]) ;2~@ than qsort when rand
+  (def (~ xs ret)
+    (if (nilp xs) ret
+      (letn
+        ( [a   (car xs)]
+          [lr  (filter2 (lam (x) [g x a]) (cdr xs))] ;
+          [pre (car  lr)]
+          [pos (cadr lr)] )
+        [~ pre (cons a [~ pos ret])] ;
+  ) ) )
+  (~ xs nil)
+)
+
 (ali msort merge-sort) ;msort/f [id] ;sort-by-comp
-(def (merge-sort ls <?) ;lt? ;2x slower than sort
+(def (merge-sort ls <?) ;lt? ;2x+ slower than sort
   (def (merge~ xs ys)
     (if (nilp xs) ys
       (if (nilp ys) xs
@@ -5562,24 +5609,26 @@ to-test:
   ) )
   (_ x0 0)
 )
-(def (fix-chk n f . xs) ;to help speed improve
-  (def (_ x m)
-    (if (>= m n) x ;
-      [_ (redu f xs) (1+ m)] ;(f . xs)
+
+(def (fix-chk n f . xs) ;to help improve speed
+  (def (_ x n)
+    (if (fx< n 1) x ;
+      (_ (apply f xs) (fx1- n)) ;
   ) )
-  (_ nil 0)
+  (_ nil n)
 )
 
 (def with-head?
   (case-lam
     ( [xs ys eql] ;(_ '(1 2 3 4) '(1 2/3)) ;-> Y/N
       (def (_ xs ys)
-        (if (nilp ys) T ;
-          (if (nilp xs) F
-            (if [eql (car xs) (car ys)]
-              [_ (cdr xs) (cdr ys)]
-              F
-      ) ) ) )
+        (if~
+          (nilp ys) T ;
+          (nilp xs) F
+          (eql (car xs) (car ys))
+            [_ (cdr xs) (cdr ys)]
+          F
+      ) )
       (_ xs ys))
     ( [xs ys]
       (with-head? xs ys eql)
