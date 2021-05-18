@@ -7,7 +7,9 @@
 
   - Update notes:
     - 1.99
-      - Z add: head-tail%, mysort
+      - Zb add: do-for-pairs, odds, demo/fac~
+      - Za add: let/ad*
+      - Z add : head-tail%, mysort
       - z add : file/cont, keys->vals, flip, fill-lhs/rhs, rgb<->565;\n Fix : groups, arb-group
       - Y fix : files/cont: more?
       - y Fix : choose: once?
@@ -505,6 +507,15 @@
         [d (identifier-syntax (cdr xs))] )
       code ...
 ) ) )
+
+(defsyt let/ad*
+  ( [_ xs rest code ...]
+    (fluid-let-syntax ;
+      ( [a (identifier-syntax (car xs))]
+        [d (identifier-syntax (cdr xs))] )
+      (let rest
+        code ...
+) ) ) )
 
 (defsyt defn_
   ( [_$% f args bd...] ;
@@ -2392,6 +2403,46 @@ to-test:
   (_ id fs) ;
 )
 
+(def/va (~do-for-pairs xs [f list])
+  (def (_ ret xs)
+    (if (cdr-nilp xs) ret
+      (let/ad* xs ([ad (cadr xs)])
+        [_ (cons (f a ad) ret) d]
+  ) ) )
+  (_ nil xs)
+)
+
+(def/va (do-for-pairs xs [f list])
+  (def (_ xs)
+    (if (cdr-nilp xs) nil
+      (let/ad* xs ([ad (cadr xs)])
+        (cons (f a ad) [_ d])
+  ) ) )
+  (_ xs)
+)
+
+(def/va (~odds xs [odd? T]) ;
+  (def (_ ret xs odd?)
+    (if (nilp xs) ret
+      (let/ad xs
+        (if odd?
+          [_ (cons a ret) d F]
+          [_ ret d T]
+  ) ) ) )
+  (_ nil xs odd?) ;
+)
+
+(def/va (odds xs [odd? T]) ;
+  (def (_ xs odd?)
+    (if (nilp xs) nil
+      (let/ad xs
+        (if odd?
+          (cons a [_ d F])
+          [_ d T]
+  ) ) ) )
+  (_ xs odd?) ;
+)
+
 ;
 
 (defn list/nth- (xs) ;list->nth~ xs
@@ -3064,6 +3115,14 @@ to-test:
         (cons s [_ (f s p)])
     ) )
     ( [total s e f p] (range/total total s f p e) ;?
+    ; ( [s e f p n]
+      ; (let ([g (if [>= (f p) 0] > <)]) ;*|/
+        ; (def (_ i)
+          ; (if (g i e) nil
+            ; (cons i [_ (f i p)]) ;
+        ; ) )
+        ; (cons s [_ (f s p)])
+    ; )
 ) ) )
 
 ;(range/total 30 4 ./ 2 0.1) ;
@@ -3980,10 +4039,10 @@ to-test:
   (let ([g (eq/eql x)]) ;
     (def (_ xs)
       (if (nilp xs) nil
-        (let ([a (car xs)] [d (cdr xs)])
+        (let/ad xs
           (if (g a x) ;
-            [_ d]
-            (cons a [_ d])
+            [_ d] ;remov
+            (cons a [_ d]) ;keep
     ) ) ) )
     (_ xs)
 ) )
@@ -4225,22 +4284,21 @@ to-test:
   (_ n)
 ) ; N mod z ?=> a^q*s^w*d^e mod z => ... ; encrypt: 椭圆曲线加密 ; 所有基于群幂的离散对数的加密算法
 
-(def/va (fast-expt g x [n 1]) ;not for pow
+(def/va (fast-expt g x [n 1]) ;not for pow ;> =
   (def (_ n)
     (if~
-      [> n 1] ;fx>= 2
+      [fx> n 1] ;fx>= 2
         (letn
           ( [m (_ [>> n 1])]
             [y (g m m)] )
-          (if (even? n) y ;fx
+          (if (fxeven? n) y ;fx
             [g y x]
         ) )
-      [= n 1] x ;eq
+      [eq n 1] x ;eq <- =
       (error "n in fast-expt, should be >= 1" n)
   ) )
   (_ n)
 )
-
 
 (def (matrix-unitlen m) [len (car m)])
 
@@ -4276,20 +4334,7 @@ to-test:
     (_ n)
 ) )
 ;(cost (fib0 42)) ;realtime = 1.111~1.176 s
-
-(def (fib1 n) ;gmp: (fib 1E) just 1s
-  ;(let ([st(clock)] [1st F])
-    (def (_ ret nex n)
-      (if (fx< n 1) ret
-        ; (bgn
-          ; (if [=0 (%[- (clock) st]100)]
-            ; (when 1st (setq 1st F) (echo ".") )
-            ; (setq 1st T) )
-          [_ nex (+ nex ret) (fx1- n)]
-    ) ) ;)
-    (_ 0 1 n)
-) ;)
-;(cost (chk 1000000 fib1 42)) ;-> 80ms
+;gmp: (fib 1E) just 1s
 
 (def (fib n)
   (def (fibo pre pos n) ;prev next cnt
@@ -4310,7 +4355,7 @@ to-test:
 
 (def (fac n) ;how to be faster, such as gmp
   (def (_ ret n)
-    (if (eq n 1) ret
+    (if (eq 1 n) ret
       [_ (* ret n) (fx1- n)]
   ) )
   [_ 1 n]
@@ -4640,7 +4685,7 @@ to-test:
     [s-path "."]
     [case? T] ;[show-ori-when-fail? T]
     [more? T]
-    [chk-ext (rcurry mem? '("h" "cpp" "txt" "md"))]
+    [chk-ext (rcurry mem? '("h" "cpp" "txt" "md"))] ;xls?
     [tar-format id] )
   (file/cont ss s-path case? more? chk-ext tar-format)
 )
@@ -4903,7 +4948,7 @@ to-test:
 (def (filter2 g xs) ;~> '(tagets rests)
   (def (_ xs ll rr) ; ll rr
     (if (nilp xs)
-      (list ll rr) ;pair
+      (list ll rr) ;/pair
       (let/ad xs
         (if (g a)
           [_ d (cons a ll) rr]
