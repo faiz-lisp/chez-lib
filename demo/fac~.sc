@@ -25,11 +25,11 @@
   (def/va (F2 f [e -1])
     (redu * (range f [fx+ 2 e] fx- 2)) ;
   )
-  (def (f1~ f2s n kk) ;(F1 f [e 0]) -> (F1 f e)(F1 e d)..
+  (def (f1~ mm n kk) ;(F1 f [e 0]) -> (F1 f e)(F1 e d)..
     (case n
       ([1 2] ;
         (* n
-          [calc (do-for-pairs (append/rev-head f2s '(-1)) F2)] ;
+          [calc (do-for-pairs (append/rev-head mm '(-1)) F2)] ;
           (pow 2 kk) ;
       ) )
       (else
@@ -39,7 +39,7 @@
             [m   (if b n-1 n)]
             [2k  (if b n n-1)]
             [k   (>> 2k 1)] )
-          [f1~ (cons m f2s) k (fx+ k kk)] ;
+          [f1~ (cons m mm) k (fx+ kk k)] ;
   ) ) ) )
   (f1~ nil n 0)
 )

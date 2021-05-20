@@ -7,15 +7,17 @@
 
   - Update notes:
     - 1.99
+      - Ze upd: range/total api-ls
+      - Zd add: rotate! walk
+      - Zc fas: factors
       - Zb add: do-for-pairs, odds, demo/fac~
       - Za add: let/ad*
       - Z add : head-tail%, mysort
       - z add : file/cont, keys->vals, flip, fill-lhs/rhs, rgb<->565;\n Fix : groups, arb-group
       - Y fix : files/cont: more?
       - y Fix : choose: once?
-      - x Upd : code-for\n    add : next
+      - x add : next
       - W add : rand-seq
-      - w upd : demo gen-code
       - v add : ref%, ref*, refs*
       - U upd : range
       - T add : chg-nth, chg-ref-val
@@ -32,7 +34,7 @@
       - i Upd : (save-file cont file [codec "utf-8"])
       - h add : replaces, str-repls, get-file-var ...
       - G upd : divide
-      - F add : true-choose, str-trim-all
+      - F add : str-trim-all
       - D upd : case (compose); fix : gotcha;
       - d upd : church
       - C add : *paths*, rlist
@@ -75,10 +77,10 @@
     - @ slow / bad
     - % theoretic / internal / paras->list
     - %B big / cost more memory space
-    - %win
+    - %win for Windows
     - ~ just faster
-    - * optimized
-    - ! (forced and) with side-effect
+    - * multi-function (or optimized)
+    - ! (forced or) with side-effect
 
   - prefixes:
     - sy/ syt/ for syntax
@@ -116,7 +118,6 @@
     - eq =, eql
 
   - todo:
-    - file-name
     - lam/va, lam-macro
     - (deep-action/map/apply g xs [seq]): d-remov
     - include
@@ -238,9 +239,6 @@
   - to-be-beauty:
     - curry compose
 
-  - to-try
-    - walker
-
   - to-be-faster:
     - . xs -> xs
     - 1/2 -> 0.5
@@ -320,6 +318,7 @@
 (ali int->char  integer->char)
 (ali replace  list-repl0)
 (alias make-groups combinations)
+(alias walk walk-lhs)
 
 ;better
 
@@ -502,7 +501,7 @@
 ;(let/ad '(1 2 3) d) ~> '(2 3)
 (defsyt let/ad
   ( [_ xs code ...]
-    (fluid-let-syntax ;
+    (fluid-let-syntax ;not for choose func
       ( [a (identifier-syntax (car xs))]
         [d (identifier-syntax (cdr xs))] )
       code ...
@@ -1434,10 +1433,15 @@ to-test:
 (defm (api? x) (bool [mem? 'x (syms)]))
 
 ;https://cisco.github.io/ChezScheme/csug9.5/summary.html#./summary:h0
-(defm (api-with x) ;(_ string) ;-> '(xx-string-xx string-xx blar blar)
-  (filter (rcurry with-sym? 'x) [syms])
-)
-;complex-syntax
+(defm (api-with . xs)
+  (let ~ ([ret (syms)] [ys 'xs]) ;
+    (if (nilp ys) ret
+      (let/ad ys
+        (~ [filter (rcurry with-sym? a) ret] d) ;
+) ) ) )
+;(api-ls delete file) -> '(delete-file ...)
+
+; complex-syntax
 
 (define-syntax define-c-function
   (lambda (x)
@@ -2127,6 +2131,10 @@ to-test:
     ) ) ) ) ) )
     [rev (_ nil KVs Ks)]
 ) )
+
+(def/va (rotate! xs [n 1])
+  (for [n] (car->end! xs)) ;[rev? F] ;end->car!
+)
 
 ; [duplicates '(123 321 123 321 321 1 2 3)] -> '(123 321 321 ...) -> remov-same
 (def (duplicates xs)
@@ -3114,8 +3122,17 @@ to-test:
         ) )
         (cons s [_ (f s p)])
     ) )
-    ( [total s e f p] (range/total total s f p e) ;?
-    ; ( [s e f p n]
+    ( [total s f p e] ;
+      (let ([g (if [>= (f s p) s] > <)]) ;
+        (def (~ res x)
+          (let ([res (- res x)])
+            (if~ (or [< res 0] [g x e]) ;
+              nil
+              (cons x [~ res (f x p)]) ;cons
+        ) ) )
+        [~ total s]
+    ) )
+    ; ( [s e f p n] ;n e
       ; (let ([g (if [>= (f p) 0] > <)]) ;*|/
         ; (def (_ i)
           ; (if (g i e) nil
@@ -3123,7 +3140,7 @@ to-test:
         ; ) )
         ; (cons s [_ (f s p)])
     ; )
-) ) )
+) )
 
 ;(range/total 30 4 ./ 2 0.1) ;
 (def/va (~range/total total [s 0] [f +] [p 1] [e nil]) ;n ;range-n
@@ -3145,9 +3162,55 @@ to-test:
       [~ nil total s]
 ) ) )
 
-(def/va (range/total total [s 0] [f +] [p 1] [e nil])
-  (rev (~range/total total s f p e))
-)
+(def range/total
+  (case-lam
+    ( [total f p] ;if f is -
+      (let ([s 1])
+        (def (~ res x)
+          (let ([res (- res x)])
+            (if [< res 0] nil
+              (cons x [~ res (f x p)]) ;
+        ) ) )
+        [~ total s]
+    ) )    
+    ( [total s f p n] ;n
+      (let ([g (if [>= (f s p) s] > <)]) ;
+        (def (~ res x i)
+          (let ([res (- res x)])
+            (if~ (or [eq n i] [< res 0]) ;
+              nil
+              (cons x [~ res (f x p) (fx1+ i)]) ;cons
+        ) ) )
+        [~ total s 0]
+    ) )
+    ( [total s f p e] ;n?
+      (let ([g (if [>= (f s p) s] > <)]) ;
+        (def (~ res x)
+          (let ([res (- res x)])
+            (if~ (or [< res 0] [g x e]) ;
+              nil
+              (cons x [~ res (f x p)]) ;cons
+        ) ) )
+        [~ total s]
+    ) )
+    ( [total n f p]
+      (let ([s 1]) ;
+        (def (~ ret res x i)
+          (let ([res (- res x)])
+            (if (or [< res 0] [eq n i])
+              ret
+              [~ (cons x ret) res (f x p) (fx1+ i)] ;
+        ) ) )
+        (letn
+          ( (ret [~ nil total s 0])
+            [s (./ total (redu + ret))] ) ;
+          [~map1 (lam (x) (* x s)) ret] ;
+    ) ) )
+    ( [total n]
+      (range/total total n + 1)
+    ) ;* 2
+    ;total n s f p e
+) )
 
 (def (vec-range n)
   [def (_ n ret)
@@ -3354,15 +3417,30 @@ to-test:
 )
 
 (def/doc (flat xs)
-  (def (_ x ret) ;
+  (def (_ ret x) ;
     (if~
-      [nilp  x] ret
+      [nilp x]
+        ret
       [consp x]
-      (_ (car x)
-        (_ (cdr x) ret) ) ;
-      (cons x ret) ;
+        (_ [_ ret (cdr x)] (car x))
+      (cons x ret)
   ) )
-  (_ xs nil)
+  (_ nil xs)
+)
+
+(def/va (walk-lhs x [lhs? T] [doer id]) ;depth first search ;vs flat
+  (def (_ ret x)
+    (if~
+      (nilp x) ret ;
+      (consp x)
+        (let/ad x
+          (if lhs?
+            (_ [_ ret a] d) ;~
+            (_ [_ ret d] a) ;@
+        ) )
+      (cons [doer x] ret)
+  ) )
+  (_ nil x)
 )
 
 (def/doc (deep-length xs)
@@ -3743,31 +3821,33 @@ to-test:
     ([p2] [distance (nlist% '(0) (len p2)) p2])
 ) )
 
-(defn min-prime-factor (n) ;factorize prime-num?
-  (def (_ n tmp max.)
-    (if (<= tmp max.)
-      (if (!= (% n tmp) 0)
-        [_ n (+ 2 tmp) max.]
-        tmp )
-      nil ;
-  ) )
-  (let ([max. (pow n 1/2)])
-    (if (!= (% n 2) 0)
-      [_ n 3 max.] ;n
-      (if (eq n 2) nil ;
-        2
-) ) ) )
-(def min-factor min-prime-factor)
+(def (min-prime-factor n) ;%? factorize prime-num?
+  (let ([max. (sqrt n)] [failsym F]) ;
+    (def (_ tmp)
+      (if~
+        (< max. tmp)
+          failsym
+        [eq (% n tmp) 0] ;
+          tmp
+        [_ (+ tmp 2)] ) ) ;
+    (if~
+      [odd? n]
+        [_ 3]
+      (eq n 2)
+        failsym ;for prime-num?
+      2
+) ) )
+(alias min-factor min-prime-factor)
 
-(defn factors (n)
-  (def (_ n factors.)
-    (let ([factor (min-factor n)])
-      (if (nilp factor)
-        (cons n factors.)
-        [_ (/ n factor) (cons factor factors.)]
+(def (factors n)
+  (def (_ factors n) ;
+    (let ([factor (min-factor n)]) ;
+      (if factor
+        [_ (cons factor factors) (/ n factor)]
+        (cons n factors) ;
   ) ) )
-  (_ n nil)
-) ;(cost(factors 40224510201988069377423))
+  (_ nil n)
+) ;(cost (factors 40224510201988069377423)) ;->113ms
 
 ;(self-act pow num n) => target
 (def/va (self-act f num [n 2]) ;@
@@ -3817,34 +3897,35 @@ to-test:
 
 ; modules
 
-; on lisp
+; on lisp: best lrec grip with-gensym with-db fnif setf rplca match/lookup proc ATN
 
 (def (clean-choose)
   (setq *paths* nil)
 )
 
 ;F when no resl
-(def/va (choose% xs [once? T]) ;syt: fail
+;todo: collect resls
+(def/va (choose% xs [once? T])
   (def (~ choices) ;choose
-    (if (nilp choices) [fail] ;
-      (let/ad choices
+    (if (nilp choices) [fail]
+      (let ([choice (car choices)] [rest (cdr choices)])
         (call-with-current-continuation
-          (lam [cc]
-            (push ;
-              (lam () [cc (~ d)]) ;
+          (lam [cc] ;
+            (push
+              (lam () [cc (~ rest)]) ;
               *paths* )
-            a
+            choice ;
   ) ) ) ) ) ;(def fail nil)
   (let ([failsym F])
     (call-with-current-continuation
-      (lam [cc]
-        (setq fail ;def?
+      (lam [cc] ;
+        (setq fail
           (lam ()
-            (if (nilp *paths*) ;
+            (if [nilp *paths*] ;
               (if once? failsym [cc failsym]) ;can stop when all choices are checked
-              (let ([p1 (car *paths*)]) ;?
-                [setq *paths* (cdr *paths*)] ;
-                (p1)
+              (let ([a (car *paths*)]) ;get car bef set to cdr
+                [setq *paths* (cdr *paths*)]
+                (a) ;
     ) ) ) ) ) )
     [~ xs]
 ) )
@@ -4354,13 +4435,14 @@ to-test:
 ;(cost (chk 100000 fib 42)) ;-> 225ms
 
 (def (fac n) ;how to be faster, such as gmp
-  (def (_ ret n)
-    (if (eq 1 n) ret
-      [_ (* ret n) (fx1- n)]
+  (def (_ ret i)
+    (if (eq i n) ;
+      (* ret i) ;
+      [_ (* ret i) (fx1+ i)]
   ) )
-  [_ 1 n]
+  [_ 1 1] ;
 )
-;(elapse(fac 50000)) ;=> elapse = 1.533~1.566 s
+;(elapse(fac 50000)) ;=> elapse = 1.372~1.4 s
 
 (def (round% x)
   (let ([f (floor x)])
@@ -4368,6 +4450,7 @@ to-test:
       (1+ f)
       f
 ) ) )
+
 (def myround
   (case-lam
     ([fl nFlt]
@@ -4376,27 +4459,6 @@ to-test:
     ) )
     ([fl] (myround fl 0))
 ) )
-
-;txt->excel->chart
-(defn math:points->parabola (x1 y1 x2 y2 x3 y3) ;y=ax^2+bx+c
-  (letn (
-      [b
-        (/[-[* (-[pow x2][pow x3]) (- y1 y2)]
-            [* (-[pow x1][pow x2]) (- y2 y3)] ]
-          [-[* (-[pow x2][pow x3]) (- x1 x2)]
-            [* (-[pow x1][pow x2]) (- x2 x3)] ] ) ]
-      [a
-        (/[- y1 y2 [* b(- x1 x2)]]
-          [- [pow x1] [pow x2]] ) ]
-      [c
-        [- y1 [* a [pow x1]] [* b x1]] ]
-    )
-    (li a b c)
-) )
-;(setq abc (math:points->parabola 1 127  153 10  253 1)) ;-> '[a b c]
-(defn y=ax2+bx+c (a b c x)
-  (+ [* a (pow x)] [* b x] c)
-)
 
 ;(for (x 128) (echol [floor->fix(redu y=ax2+bx+c [conz abc x])]))
 ;(for (x 128) (print-to-file "1.txt" [floor->fix(redu y=ax2+bx+c [conz abc x])]))
@@ -5183,10 +5245,10 @@ to-test:
 
 ;sort
 
-(def (car->end! xs)
+(def (car->end! xs) ;end->car!
   (if (cdr-nilp xs) xs
     (bgn
-      (set-cdr! (last-pair xs) (li (car xs))) ;
+      (set-cdr! (last-pair xs) (list (car xs))) ;
       (set-car! xs (cadr xs)) ;
       (set-cdr! xs (cddr xs))
       xs
