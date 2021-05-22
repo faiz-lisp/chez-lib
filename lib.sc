@@ -7,6 +7,7 @@
 
   - Update notes:
     - 1.99
+      - Zh fix: digest%
       - Zg add: digest% fold% exist-same? max-min
       - Zf upd: randnums fold int
       - Ze upd: range/total api-ls
@@ -4088,11 +4089,16 @@ to-test:
     ([num] (n-digits num 10))
 ) )
 
+;0
 (def/va
   (digest% xs
-    [doer (lam (x y) [+ (sin x) y])] )
+    (doer
+      (lam (x y)
+        ;[* (+ (sin x) 2) y])
+        (* [+ (sin x) 2] [+ (sin y) 2]) ;2?
+  ) ) ) ;+ and * ;if y=0?
   (let ([level (pow 10 12)]) ;8~13
-    ( (flow (curry * level) round) ;int?
+    ( (flow (curry * level) round) ;int? ;round and sin
       (id ;fold% doer
         ;(redu + xs)
         (fold% doer xs) ;need seq ;foldl
