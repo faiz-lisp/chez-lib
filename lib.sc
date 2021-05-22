@@ -7,8 +7,9 @@
 
   - Update notes:
     - 1.99
+      - ZH upd: digest%
       - Zh fix: digest%
-      - Zg add: digest% fold% exist-same? max-min
+      - Zg add: fold% exist-same? max-min
       - Zf upd: randnums fold int
       - Ze upd: range/total api-ls
       - Zd add: rotate! walk
@@ -4079,29 +4080,27 @@ to-test:
 
 (def n-digits ;integer-length 128 2
   (case-lam
-    ( [num m] ;@ not for float
+    ([num m] ;@ not for float
       (def (_ num n)
         (let ([quot (quotient num m)]) ;@ 1 2 4 2 1
           (if [< quot 1] n
-            [_ quot (1+ n)] ;fx
+            [_ quot (fx1+ n)] ;fx
       ) ) )
       (_ num 1) )
     ([num] (n-digits num 10))
 ) )
 
-;0
 (def/va
-  (digest% xs
+  (digest% xs [level 12] ;
     (doer
       (lam (x y)
-        ;[* (+ (sin x) 2) y])
         (* [+ (sin x) 2] [+ (sin y) 2]) ;2?
-  ) ) ) ;+ and * ;if y=0?
-  (let ([level (pow 10 12)]) ;8~13
-    ( (flow (curry * level) round) ;int? ;round and sin
+  ) ) )
+  (let ([factor (pow 10 level)]) ;8~13
+    ([flow (curry * factor) round] ;? int *
       (id ;fold% doer
         ;(redu + xs)
-        (fold% doer xs) ;need seq ;foldl
+        (fold% doer 1 xs) ;need seq ;foldl ;rec
         ;(len xs) ;
         nil
 ) ) ) )
