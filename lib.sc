@@ -7,6 +7,8 @@
 
   - Update notes:
     - 1.99
+      - Zg add: digest% fold% exist-same? max-min
+      - Zf upd: randnums fold int
       - Ze upd: range/total api-ls
       - Zd add: rotate! walk
       - Zc fas: factors
@@ -2813,11 +2815,11 @@ to-test:
   (/ x 2)
 )
 
-(def [int n] ;
+(def (int n) ;[exa? F]
   (def (_ n)
     (if (number? n)
       (if~
-        [inexact? n] (float->fix n)
+        [inexact? n] (inexact->exact (round n)) ;@ ?float->fix
         [int? n]     n
         [_ (inexa n)] )
       n ;
@@ -2846,13 +2848,13 @@ to-test:
   (list->str [map (curry xth chars) (_ nil num)])
 )
 
-(def/va (str->int/system snum [scale 10] [chars (append *chs-numbers* *chs-Letters*)]) ;snum
-  (def (_ ret xs)
+(def/va (str->int/system snum [scale 10] [chars (append *chs-numbers* *chs-Letters*)]) ;snum ;case?
+  (def (_ ret xs) ;
     (if [nilp xs] ret
       (let/ad xs
         [_ (+ (* ret scale) a) d]
   ) ) )
-  (_ 0 (map [compose 1- (rcurry nth-of chars)] [str->list snum])) ;
+  (_ 0 (map [flow (rcurry nth-of chars) fx1-] [str->list snum])) ;
 )
 
 ; string
@@ -3162,8 +3164,12 @@ to-test:
       [~ nil total s]
 ) ) )
 
-(def range/total
-  (case-lam
+(def range/total ;total n s f p e
+  (case-lam  
+    ( [total]
+      (range/total total 0 + 1 total) )
+    ( [total n]
+      (range/total total n + 1) ) ;* 2
     ( [total f p] ;if f is -
       (let ([s 1])
         (def (~ res x)
@@ -3172,8 +3178,21 @@ to-test:
               (cons x [~ res (f x p)]) ;
         ) ) )
         [~ total s]
-    ) )    
-    ( [total s f p n] ;n
+    ) )
+    ( [total n f p] ;s/e
+      (let ([s 1]) ;
+        (def (~ ret res x i)
+          (let ([res (- res x)])
+            (if (or [eq n i] [< res 0])
+              ret
+              [~ (cons x ret) res (f x p) (fx1+ i)] ;
+        ) ) )
+        (letn
+          ( (ret [~ nil total s 0])
+            [s (./ total (redu + ret))] ) ;
+          [~map1 (lam (x) (* x s)) ret] ;
+    ) ) )
+    ( [total n s f p] ;
       (let ([g (if [>= (f s p) s] > <)]) ;
         (def (~ res x i)
           (let ([res (- res x)])
@@ -3183,33 +3202,16 @@ to-test:
         ) ) )
         [~ total s 0]
     ) )
-    ( [total s f p e] ;n?
+    ( [total n s f p e]
       (let ([g (if [>= (f s p) s] > <)]) ;
-        (def (~ res x)
+        (def (~ res x i)
           (let ([res (- res x)])
-            (if~ (or [< res 0] [g x e]) ;
+            (if~ (or [eq i n] [< res 0] [> x e]) ;
               nil
-              (cons x [~ res (f x p)]) ;cons
+              (cons x [~ res (f x p) (fx1+ i)]) ;
         ) ) )
-        [~ total s]
+        [~ total s 0]
     ) )
-    ( [total n f p]
-      (let ([s 1]) ;
-        (def (~ ret res x i)
-          (let ([res (- res x)])
-            (if (or [< res 0] [eq n i])
-              ret
-              [~ (cons x ret) res (f x p) (fx1+ i)] ;
-        ) ) )
-        (letn
-          ( (ret [~ nil total s 0])
-            [s (./ total (redu + ret))] ) ;
-          [~map1 (lam (x) (* x s)) ret] ;
-    ) ) )
-    ( [total n]
-      (range/total total n + 1)
-    ) ;* 2
-    ;total n s f p e
 ) )
 
 (def (vec-range n)
@@ -3709,6 +3711,7 @@ to-test:
     (redu~ + xs)
     (len xs)
 ) )
+
 (def (.avg . xs)
   (./
     (redu~ + xs)
@@ -3755,6 +3758,22 @@ to-test:
     (if [flonum? rnd]
       (flonum->fixnum rnd)
       rnd
+) ) )
+
+(def (max-min nums)
+  (let/ad nums
+    (def (~ xs mx mn)
+      (if [nilp xs] (list mx mn)
+        (let/ad xs
+          (if~
+            [> a mx]
+              (~ d a mn)
+            [< a mn]
+              (~ d mx a)
+            (~ d mx mn)
+    ) ) ) )
+    (if (nilp nums) nil ;
+      [~ d a a]
 ) ) )
 
 (def (not-exist-meet? g xs)
@@ -3878,21 +3897,36 @@ to-test:
 
 ; end of math
 
-(def (fold g x xs)
-  (redu g (cons x xs)) ;
-)
+(def (fold g xs) ;(redu g (cons x xs))
+  (if~
+    [nilp xs] nil
+    [cdr-nilp xs] (car xs)
+    (foldl g (car xs) (cdr xs)) ;
+) )
+
+;(fold% g x y ... xs)
+(def (fold% g . paras) ;(redu g (cons x xs))
+  (letn
+    ( [ls (last paras)]
+      [r-rest (rcdr paras)] ;
+      [xs (foldr cons ls r-rest)] )
+    (if~
+      [nilp xs] nil ;
+      [cdr-nilp xs] (car xs)
+      (foldl g (car xs) (cdr xs)) ;
+) ) )
 
 ;(foldl-n n g xs)
 (def (foldl-n n g xs)
-  (let ([n2 (1- n)])
+  (let ([n2 (fx1- n)])
     (def (_ xs ret i)
       (if (eq i 0)
-        (fold g ret xs)
+        (foldl g ret xs)
         (_ [list-tail xs n2]
-          (fold g ret [list-head xs n2])
-          (- i n2)
+          (foldl g ret [list-head xs n2])
+          (fx- i n2)
     ) ) )
-    (_ (cdr xs) (car xs) [- (len xs) n])
+    (_ (cdr xs) (car xs) [fx- (len xs) n])
 ) )
 
 ; modules
@@ -4054,14 +4088,24 @@ to-test:
     ([num] (n-digits num 10))
 ) )
 
+(def/va
+  (digest% xs
+    [doer (lam (x y) [+ (sin x) y])] )
+  (let ([level (pow 10 12)]) ;8~13
+    ( (flow (curry * level) round) ;int?
+      (id ;fold% doer
+        ;(redu + xs)
+        (fold% doer xs) ;need seq ;foldl
+        ;(len xs) ;
+        nil
+) ) ) )
+
 (def (leap-year? yr)
   (or (=0 [% yr 400])
     (and
       (=0 [% yr 4])
       (!=0[% yr 100])
 ) ) )
-
-(def inc-1 (rcurry - 1)) ;
 
 (def (strnum- . snums)
   (number->string (redu~ - (map string->number snums)))
@@ -5296,13 +5340,21 @@ to-test:
 )
 
 (def randnums
-  (case-lam
+  (case-lam  
+    ([n s e] ;e-s+1 + s ;range?
+      (let ([m (- (1+ e) s)])
+        (def (_ ret n)
+          (if (fx< n 1) ret
+            [_ (cons [+ s (random m)] ret) (fx1- n)] ;
+        ) )
+        (_ nil n)
+    ) )
     ([n m]
-      (def (_ n)
-        (if (< n 1) nil
-          (cons (random m) [_ (1- n)]) ;
+      (def (_ ret n)
+        (if (fx< n 1) ret
+          [_ (cons (random m) ret) (fx1- n)] ;
       ) )
-      (_ n)
+      (_ nil n)
     )
     ([n] [randnums n n])
 ) )
@@ -5636,7 +5688,7 @@ to-test:
 (def (mem?% x xs) (bool (mem? x xs)))
 
 ;(setq a '(1 2 2 3 3 3 4)) ;~> '(2 3)
-(def (filter-same xs)   ;OK
+(def (filter-same xs)   ;OK ;exist-same?
   (def (_ xs pure same) ;curr .vs. 1.pure, 2.same -> 3.ign
     (if (nilp xs) same  ;return
       (let ([a (car xs)])
@@ -5646,7 +5698,17 @@ to-test:
             [_ (cdr xs) pure (cons a same)] )
           [_ (cdr xs) (cons a pure) same] ;
   ) ) ) )
-  (rev [_ xs nil nil])  ;final handling
+  [_ xs nil nil] ;rev ;final handling
+)
+
+(def (exist-same? xs )
+  (def (_ xs pure)
+    (if (nilp xs) F
+      (let ([a (car xs)])
+        (if (mem? a pure) T ;
+          [_ (cdr xs) (cons a pure)]
+  ) ) ) )
+  [_ xs nil]
 )
 
 (def (remov-same xs) ;filter-pure
@@ -5948,15 +6010,15 @@ to-test:
     (nth mapp one)
 ) )
 
-(def/va (play-hz [freq 456] [ms 200]) ;La2
+(def/va (play-hz [freq 456] [ms 200]) ;[scale-offs 0]) ;pow 2 scale-offs
   (beep [int freq] ms)
 )
 
-(def/va (play-hz-s hzs [ms 200] [freq? T])
+(def/va (play-hzs hzs [ms 200] [freq? T])
   (let ([conv (if freq? id doremi->Hz)])
     (for-each ;
       (lam [x]
-        (play-hz [conv x] ms) )
+        (play-hz [conv x] ms) ) ;
       hzs ;mss
     ) T
 ) )
@@ -5973,7 +6035,7 @@ to-test:
 
 (setq
   *chs-numbers* [map digit->char (range 0 9)]
-  *chs-Letters* (str->list "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+  *chs-Letters* (str->list "ABCDEFGHIJKLMNOPQRSTUVWXYZ") ;A~H 8
 )
 
 (setq *current-path* (str-repl (command-result "cd") "\r\n" "")) ; ?"Pro File"

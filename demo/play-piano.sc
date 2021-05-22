@@ -10,7 +10,7 @@
   - if note? note else hz
 |#
 
-;(play-hz-s mus-1)
+;(play-hzs mus-1)
 
 (alias *key2doremi* *key2doremi-1*)
 
