@@ -7,8 +7,9 @@
 
   - Update notes:
     - 1.99
+      - ZI fix: deep&
+      - Zi add: int->list next-to
       - ZH upd: digest%
-      - Zh fix: digest%
       - Zg add: fold% exist-same? max-min
       - Zf upd: randnums fold int
       - Ze upd: range/total api-ls
@@ -20,18 +21,14 @@
       - z add : file/cont, keys->vals, flip, fill-lhs/rhs, rgb<->565;\n Fix : groups, arb-group
       - Y fix : files/cont: more?
       - y Fix : choose: once?
-      - x add : next
       - W add : rand-seq
       - v add : ref%, ref*, refs*
       - U upd : range
-      - T add : chg-nth, chg-ref-val
+      - T add : chg-nth, chg-ref-val ;
       - S upd : refs nths xths pts->vals
-      - s add : groups, nths
       - r upd : demo maze
-      - Q upd : str-repl%, replace% can CRUD
+      - Q upd : str-repl%, replace% can CRUD ;
       - O add : (do-for xs conv deconv)
-      - n add : -=
-      - M upd : demo play-piano
       - L add : elem-freq, mem?-and-do
       - K add : save-bin-file
       - I add : strcat/sep-per flow load-binary-file
@@ -41,8 +38,7 @@
       - F add : str-trim-all
       - D upd : case (compose); fix : gotcha;
       - d upd : church
-      - C add : *paths*, rlist
-      - B upd : files/cont
+      - C add : rlist
       - a add : (collect 10 (do-sth))
       - ~ add : int<->str/system, digit<->char, global vars
     - 1.98
@@ -74,7 +70,6 @@
     - 1.95 Upd: fold (_ f x xs), foldl-n (_ n fn xs), infix->prefix (_ xs), ./
     - 1.94 Add: self-act (_ pow 2 3) => (pow 2 2 2), rev-calc (_ pow 4) => 2
     - 1.93 Simp algo: fast-expt, (_ g x [n 1])
-    - 1.92 Upd: api-ls: symbol -> macro
     - 1.91 add: logic for dividing vowels in japanese
 
   - Suffixes:
@@ -1052,10 +1047,12 @@ to-test:
 (alias null null?)
 (alias second cadr)
 
+;
+
 (defsyt getf
   ( (_ xs xtag)
-    (if (<(len xs)2) nil
-      (if (eq (car xs) 'xtag)
+    (if [< (len xs) 2] nil
+      (if [eq (car xs) 'xtag]
         (cadr xs)
         (ev `(getf (cddr xs) xtag)) ;
 ) ) ) )
@@ -1067,16 +1064,20 @@ to-test:
         (fx1+ i)
         (ev `(getf-xth-iter (cddr x) f1 (+ 2 i)))
 ) ) ) )
+
 (defsyt getf-xth
   ( (_ x f1)
     (getf-xth-iter x f1 0)
 ) )
+
 (defsyt setf* ;(_ mapA tagX a)
-  ( (_ x f1 a)
-    (letn [ (i (getf-xth x f1)) ]
-      (if (nilp i) (if *will-ret* x nil)
-        (set-xth! x i a)
+  ( [_ x f1 a]
+    (let ([i (getf-xth x f1)])
+      (if [nilp i]
+        (if *will-ret* x nil)
+        (set-xth! x i a) ;
 ) ) ) )
+
 (alias aref list-ref) ;
 
 ;oth
@@ -2092,6 +2093,7 @@ to-test:
 )
 
 (def cdr-nilp [lam (x) (nilp (cdr x))])
+(def car-nilp [lam (x) (nilp (car x))])
 
 (def [lisp x] ;@ how about list? and your old code
   (and (pair? x)
@@ -2154,7 +2156,7 @@ to-test:
   ;]
 )
 
-(def/va (next xs x [eq eq])
+(def/va (next-to x xs [eq eq])
   (def (~ xs flg)
     (if~
       (nilp xs) nil
@@ -2839,7 +2841,7 @@ to-test:
 )
 
 ;(num->int/system num 36~62) ;numeration/num<->str
-(def/va (int->str/system num [scale 10] [chars (append *chs-numbers* *chs-Letters*)])
+(def/va (int->str/system num [scale 10] [chars (append *chs-numbers* *chs-Letters*)]) ;'(0 1 .. A .. Z)
   (def (_ ret num)
     (if [eq 0 num] ret
       (let
@@ -2857,6 +2859,17 @@ to-test:
         [_ (+ (* ret scale) a) d]
   ) ) )
   (_ 0 (map [flow (rcurry nth-of chars) fx1-] [str->list snum])) ;
+)
+
+(def/va (int->list num [scale 10] [Syms (append *syms-numbers* *syms-Letters*)]) ;'(0 1 .. A .. Z)
+  (def (_ ret num)
+    (if [eq 0 num] ret
+      (let
+        ( [rem (% num scale)]
+          [quot (quotient num scale)] )
+        [_ (cons rem ret) quot]
+  ) ) )
+  [map (curry xth Syms) (_ nil num)]
 )
 
 ; string
@@ -4266,6 +4279,17 @@ to-test:
         (map [curry cons (car xs)] rest)
 ) ) ) )
 
+(def/va (deep& [fx id] [fxs id] xs)
+  (def (_ x)
+    (if~
+      [nilp  x] nil
+      [consp x]
+        [fxs (map _ x)] ;@
+      [fx x]
+  ) )
+  (_ xs)
+)
+
 ;(deep-reverse '(1(2 3)4)) ;-> '(4(3 2)1)
 (def (deep-reverse xs)
   (def (d-rev xs)
@@ -4277,17 +4301,6 @@ to-test:
       else xs
   ) )
   (d-rev xs)
-)
-(def (deep& func f xs) ;xs [func id] [f id]
-  (def (_ x)
-    (if~
-      [nilp  x] nil
-      [pair? x]
-      (map _
-        (func x) ) ;
-      else [f x]
-  ) )
-  (_ xs)
 )
 
 ;(group '(1 2 3 4 5 6) 3)
@@ -5109,15 +5122,16 @@ to-test:
 )
 (defn num->rbump-g (n g)
   (def (_ n ret)
-    (if~ (< n 0) nil
+    (if~
       (eq n 0) ret
-      [_ (1- n) (g n ret)]
+      (fx< n 0) nil
+      [_ (fx1- n) (g n ret)]
   ) )
-  (_ (1- n) (g n))
+  [_ (fx1- n) (g n)]
 )
 
-(def num->lbump (rcurry num->lbump-g li))
-(def num->rbump (rcurry num->rbump-g li))
+(def num->lbump (rcurry num->lbump-g list))
+(def num->rbump (rcurry num->rbump-g list))
 
 ; (defn dmap% (g xs)
   ; (def (_ xs ret)
@@ -6039,6 +6053,8 @@ to-test:
 (setq *paths* nil) ;shared ;ng name
 
 (setq
+  *syms-numbers* (range 0 9)
+  *syms-Letters* (map [flow char->string str->sym] (str->list "ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
   *chs-numbers* [map digit->char (range 0 9)]
   *chs-Letters* (str->list "ABCDEFGHIJKLMNOPQRSTUVWXYZ") ;A~H 8
 )
