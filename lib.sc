@@ -4,9 +4,15 @@
 
 #|
 == Chez-lib.sc (mainly for Windows NT) - written by Faiz
-
+   ________  __                             __   __  _
+  /    ___ \|  |__   ____ _______          |  | |__|| |__  
+  /    \  \/|  |  \_/ __ \\__   /   ______ |  | |  || __ \ 
+  \     \___|  |\  |  ___/  /  /_  /_____/ |  |_|  || \_| \
+   \_______/\__||__|\_____>/_____\         |____/__|\_____/
+        
   - Update notes:
     - 1.99
+      - Zj upd: avg%, UI
       - ZI fix: deep&
       - Zi add: int->list next-to
       - ZH upd: digest%
@@ -536,7 +542,7 @@
 (defsyt +=
   ( [_ x . xs]
     (bgn
-      (set! x (+ x . xs))
+      (set! x (+ x . xs)) ;
       x
 ) ) )
 
@@ -1966,6 +1972,7 @@ to-test:
 (def (last pr)
   (car (last-pair pr))
 )
+
 (def (last* xs)
   (if (nilp xs) Err
     (last xs)
@@ -1973,7 +1980,7 @@ to-test:
 
 (def (last% xs)
   (def (_ xs)
-    (if (nilp (cdr xs))
+    (if [nilp (cdr xs)]
       (car xs)
       [_ (cdr xs)]
   ) )
@@ -1982,7 +1989,7 @@ to-test:
 ) )
 
 (define windows?
-  (case (machine-type)
+  (case [machine-type]
     ((a6nt i3nt ta6nt ti3nt) #t)
     (else #f)
 ) )
@@ -2013,20 +2020,19 @@ to-test:
     ; (redu cons* (sy-rev xs ...))
 ; ) )
 
-(defn num-of [x db] ;
+(def [num-of x db] ;
   (let ([g (eq/eql x)])
     (def (_ db n)
-      (if (nilp db) n
-        (_
-          (cdr db)
+      (if [nilp db] n
+        (_ (cdr db)
           (if [g (car db) x]
             (fx1+ n)
-            n )
-    ) ) )
+            n
+    ) ) ) )
     (_ db 0)
 ) )
 
-(defn nth-of-x (x db)
+(def (nth-of-x x db)
   (let ([g (eq/eql x)])
     (def (_ db n)
       (if (nilp db) F
@@ -2049,6 +2055,15 @@ to-test:
     ; (set-cdr! (last-pair ys) (cons z nil)) ;
     ; ys )
   (conz xs z) ;a bit faster than above
+)
+
+(def (~map1 g xs) ;~
+  (def (~ ret xs)
+    (if [nilp xs] ;
+      ret
+      [~ (cons [g (car xs)] ret) (cdr xs)] ;
+  ) )
+  (~ nil xs)
 )
 
 ;(head-tail (range 10) 6) ;-> '([0 1 2 3 4 5] [6 7 8 9])
@@ -2243,7 +2258,7 @@ to-test:
 
 (def (w* num) (* num 10000))
 
-(defn ~remov-same (xs) ;@
+(def [~remov-same xs] ;@
   (def (_ xs ts)
     (if (nilp xs) ts
       (let/ad xs
@@ -2506,7 +2521,7 @@ to-test:
   (_ (car xz) (cdr xz))
 )
 
-(defn longest xz ;(longest '(1 2) '() '(2 3)) ~> '(2 3)?
+(def (longest . xz) ;(longest '(1 2) '() '(2 3)) ~> '(2 3)?
   (most
     [lam (l r)
       (if [len-cmp > l r] l r) ]
@@ -3008,7 +3023,7 @@ to-test:
     ((atom?   x) (sym->str           'x)) ;
     (els          "")
 ) )
-(defn lis->str (xs)
+(def (lis->str xs) ;
   (redu~ strcat (map any->str xs)) ;
 ) ;lis2str
 
@@ -3038,7 +3053,7 @@ to-test:
 )
 (def (xn-mk-list . xns) (xn-mk-list% xns))
 
-(defn nx->list (n x) ;a bit faster than make-list
+(def (nx->list n x) ;a bit faster than make-list
   (def (_ n rest)
     (cond [(< n 1) rest]
       [else
@@ -3307,7 +3322,7 @@ to-test:
     #f
 ) )
 
-(defn getf* (xs xtag) ;`(:n ,n :x ,x)
+(def (getf* xs xtag) ;`(:n ,n :x ,x)
   (if (<(len xs)2) nil
     (if (eq (car xs) xtag)
       (cadr xs)
@@ -3324,7 +3339,7 @@ to-test:
   (_ xs iz)
 )
 
-(defn char->string (x) (list->string (li x)))
+(def (char->string x) (list->string (li x)))
 
 (def (str-explode s)
   (map char->string (string->list s))
@@ -3510,7 +3525,7 @@ to-test:
   (if (eq #t b) #t #f)
 )
 (alias fal? not)
-(defn  neq (x y) [not(eq  x y)])
+(def  (neq x y) [not(eq  x y)])
 (defn !eql (x y) [not(eql x y)])
 
 (def (tyeq x y) ;
@@ -3721,11 +3736,22 @@ to-test:
   (redu~ xor2% [map not xs]) ;not issue when: (xor x)
 )
 
-(def (avg . xs)
-  (/ ;
-    (redu~ + xs)
-    (len xs)
-) )
+(def (avg% ns)
+  (def (~ ns ret n)
+    (if
+      [nilp ns] (/ ret n) ;
+      (let/ad ns
+        (~ d (+ a ret) (fx1+ n))
+  ) ) )
+  (~ ns 0 0)
+)
+
+(def (avg . xs) ;@
+  ; (/
+    ; (redu~ + xs)
+    ; (len xs) )
+  (avg% xs)
+)
 
 (def (.avg . xs)
   (./
@@ -4226,7 +4252,7 @@ to-test:
   ) ) ) )
   (_ xs [sort < (filter >0 nths)] 1) ;
 )
-(defn remov-nth (xs . nths)
+(def (remov-nth xs . nths)
   (def (_ xs nths n)
     (if (nilp xs) nil
       (if (nilp nths) xs
@@ -4577,10 +4603,10 @@ to-test:
 
 (def ReLU (curry max 0))
 
-(defn sigmoid (x)
-  (/ (1+ [exp(- x)]))
+(def (sigmoid x)
+  (/ (1+ [exp (- x)]))
 )
-(defn swish (x)
+(def (swish x)
   (* x (sigmoid x))
 )
 
@@ -4893,6 +4919,14 @@ to-test:
   (_ xs)
 ) ;a bit slower than (head xs n)
 
+(def (mk-cps g)
+  (lam args
+    ( [last args] ;
+      (redu g
+        (rcdr args) ) ;
+) ) )
+;([(compose-n mk-cps 2) rev] '(1 2 3) list echo)
+
 (def (mk-cps0 g) ;cps相当于做了堆栈交换?
   (lam args
     (let ([r (rev args)])
@@ -4900,12 +4934,6 @@ to-test:
         (redu g
           (rev (cdr r)) ;
 ) ) ) ) )
-(def (mk-cps g)
-  (lam args
-    ( [last args]
-      (redu g
-        (rcdr args)
-) ) ) )
 
 ; ((lambda (x) (list x (list 'quote x)))
   ; '(lambda (x) (list x (list 'quote x)))))
@@ -4946,7 +4974,7 @@ to-test:
 (ali call-cps call-snest)
 (alias defn-cps defn-snest)
 
-(defn nex-prime (p)
+(def (nex-prime p)
   (prime p 2) ;
 )
 (def inc (curry + 1)) ;for church's f, use 1+ is not rooty ?
@@ -5743,52 +5771,52 @@ to-test:
 
 ;yin's code
 
-(def cps ;cont-pass-style
-  (lam (exp)
+(def cps ;cont-pass-style ;
+  (lam (exp) ;lam-quote-exp: nontailrec->tailrec
     (letrec ;recurse
-      ( [trivial? (lam (x) ;
+      ( [trivial? ;
+          (lam (x) ;
             (memq x '(zero? add1 sub1)) )] ;member-quo?
-        ;[id   (lambda (v) v)]
         [ctx0 (lambda (v) `(k ,v))]      ; tail context
-        [fv (let ([n -1])
-              (lam ()
-                (set! n (1+ n))
-                (string->symbol (string-append "v" (number->string n)))))]
-        [cps1 (lam (exp ctx)
+        (fv ;
+          (let ([n -1])
+            (lam ()
+              (set! n (1+ n))
+              (string->symbol (string-append "v" (number->string n))) ) ) )
+        (cps1 (lam (exp ctx)
             (pmatch exp ;
-              ( ,x [guard (not(pair? x))] (ctx x) )
-              ( (if ,test ,conseq ,alt)
-                [cps1 test (lam (t)
+              ( ,x [guard (not (pair? x))] (ctx x) )
+              ( [if ,test ,conseq ,alt]
+                (cps1 test (lam (t)
                     (cond
                       [(memq ctx (list ctx0 id))
                        `(if ,t ,(cps1 conseq ctx) ,(cps1 alt ctx))]
-                      [else
+                      (else
                         (let ([u (fv)])
                          `(let ([k (lambda (,u) ,(ctx u))])
                             (if ,t ,(cps1 conseq ctx0) ,(cps1 alt ctx0))
-              ) ) ] ) ) ] )
-              ( (lam (,x) ,body)
+              ) ) ) ) ) ) )
+              ( [lam (,x) ,body]
                 (ctx `(lambda (,x k) ,(cps1 body ctx0))) )
-              [ (,op ,a ,b)
-                [cps1 a (lam (v1)
-                    [cps1 b (lam (v2)
+              ( [,op ,a ,b]
+                (cps1 a (lam (v1)
+                    (cps1 b (lam (v2)
                         (ctx `(,op ,v1 ,v2))
-              ) ] ) ] ]
-              [ (,rator ,rand)
-                [cps1 rator (lam (r)
-                    [cps1 rand (lam (d)
+              ) ) ) ) )
+              ( [,rator ,rand]
+                (cps1 rator (lam (r)
+                    (cps1 rand (lam (d)
                         (cond
-                          [(trivial? r) (ctx `(,r ,d))]
+                          [(trivial? r)    (ctx `(,r ,d))]
                           [(eq? ctx ctx0) `(,r ,d k)]  ; tail call
-                          [else
+                          (else
                             (let ([u (fv)])
                              `(,r ,d (lam (,u) ,(ctx u)))
-      ) ] ) ) ] ) ] ] ) ) ] )
+      ) ) ) ) ) ) ) ) ) ) ) )
       (cps1 exp id)
 ) ) )
 
-
-;to-test: (cps ...)
+;to-test: https://blog.csdn.net/lifan_3a/article/details/41677801
 
 (def (rec-chk n f x0 . xs0) ; ;(_ 20 + 0 1 2)
   (def (_ x m)
