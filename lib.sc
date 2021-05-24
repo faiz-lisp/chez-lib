@@ -12,6 +12,7 @@
         
   - Update notes:
     - 1.99
+      - ZJ upd: ~=; add: pow/, pow-root
       - Zj upd: avg%, UI
       - ZI fix: deep&
       - Zi add: int->list next-to
@@ -805,15 +806,15 @@ to-test:
     ( [_ (i from to step) code ...]
       (let ~ ([i from])
         (cond
-          ( [> step 0]
+          ([> step 0]
             (when (<= i to)
               code ...
               [~ (+ i step)] ) )
-          ( [< step 0]
+          ([< step 0]
             (when (>= i to)
               code ...
               [~ (+ i step)] ) )
-          (else nil)
+          (else nil) ;fz
     ) ) )
 
     ;call/cc
@@ -3736,28 +3737,26 @@ to-test:
   (redu~ xor2% [map not xs]) ;not issue when: (xor x)
 )
 
-(def (avg% ns)
+(def/va (avg% ns [n0 0] [f +] [g /]) ;* pow/ 4 2 
   (def (~ ns ret n)
-    (if
-      [nilp ns] (/ ret n) ;
+    (if [nilp ns]
+      (g ret n) ;
       (let/ad ns
-        (~ d (+ a ret) (fx1+ n))
+        (~ d (f a ret) (fx1+ n)) ;
   ) ) )
-  (~ ns 0 0)
+  (~ ns n0 0) ;0
 )
 
 (def (avg . xs) ;@
-  ; (/
+  ; (/ ;
     ; (redu~ + xs)
     ; (len xs) )
   (avg% xs)
 )
 
 (def (.avg . xs)
-  (./
-    (redu~ + xs)
-    (len xs)
-) )
+  (avg% xs .+)
+)
 
 (def %
   (case-lam
@@ -3784,6 +3783,21 @@ to-test:
     (expt (car xs) 2) ;
     (fold-left expt (car xs) (cdr xs))
 ) )
+
+(def (pow/ n m)
+  (pow n (/ 1. m)) ;expt
+)
+
+(def/va (pow-root m [= (rcurry ~= 15)] [n0 3] [maxTimes 10000])
+  (def (~ n i)
+    (let ([tmp (log m n)]) ;
+      (if~
+        [eq i maxTimes] n
+        [= tmp n] n
+        (~ [avg% (list n tmp)] (fx1+ i))
+  ) ) )
+  (~ n0 0) ;
+)
 
 (def/va (in-range num s e [lt <]) ;case?
   (if~
@@ -3848,7 +3862,7 @@ to-test:
     (eq xx (mod num tmp))
 ) )
 
-(setq *max-deviation* (- [expt(sqrt 2)2] 2)) ;?
+(setq *max-deviation* (- [expt (sqrt 2) 2] 2)) ;?
 (setq *max-deviation-ratio* ;
   (/ ;
     (1-
@@ -3856,19 +3870,22 @@ to-test:
         (pow (sqrt 2)) ;
         2
     ) )
-    2 )
-)
-(def (~= a b)
-  (< ;
-    (abs
-      (1-
-        (/ a b) ;
-    ) )
-    *max-deviation-ratio* ;/
-    ; (let ([cal (if(> a b) call rcall%)])
-      ; [<= (1-(cal / a b)) *max-accuracy-error-ratio*]
-    ; )
+    2
 ) )
+(def/va (~= a b [num-prec F]) ;(rcurry ~= 15)
+  (let
+    ( (max-deviation-rat
+        (if num-prec
+          [/ 1. (pow 10. num-prec)]
+          *max-deviation-ratio* ;~ > pow 10 16
+    ) ) )
+    (< ;
+      (abs
+        (1-
+          (/ a b) ;
+      ) )
+      max-deviation-rat
+) ) )
 
 (def distance
   (case-lam
@@ -3930,7 +3947,7 @@ to-test:
         [= resl tar] ;(inexa
           x ;)
         [> resl tar] ;stru>
-          [_ x (avg pre x) pre] ;
+          [_ x (avg pre x) pre] ;..
         [_ nex (avg nex x) x]
   ) ) )
   [_ tar x0 0] ;
@@ -3979,7 +3996,7 @@ to-test:
 )
 
 ;F when no resl
-;todo: collect resls
+;todo: collect resls, not only one, maybe we could get at most n resls
 (def/va (choose% xs [once? T])
   (def (~ choices) ;choose
     (if (nilp choices) [fail]
