@@ -12,6 +12,7 @@
         
   - Update notes:
     - 1.99
+      - ZK fas: myround -> round*
       - Zk upd: doremi->Hz; add: call-xn
       - ZJ upd: ~=; add: pow/, pow-root
       - Zj upd: avg%, UI
@@ -326,6 +327,7 @@
 (ali replace  list-repl0)
 (alias make-groups combinations)
 (alias walk walk-lhs)
+(ali round* myround)
 
 ;better
 
@@ -1381,10 +1383,10 @@ to-test:
     (let ([t 0])
       (echol (fmt ": ~s" 'g))
       ;(set! t (clock))
-      (set! t (get-ms))
+      (set! t (get-ms)) ;
       g
       ;(set! t (inexa(/ (-(clock)t) CLOCKS_PER_SEC)))
-      (set! t (-(get-ms)t))
+      (set! t (- (get-ms) t)) ;
       (echol ": elapse =" t "ms")
       t
 ) ) )
@@ -3949,7 +3951,7 @@ to-test:
 ;(rev-calc pow target) =(checker)=> x
 ;(cube-root 27.) is very slow
 (def/va (rev-calc fx tar [= ~=] [x0 2]) ;[exa? T] ;todo: f-xs=y... for +-*/
-  (def (_ nex x pre)
+  (def (_ nex x pre) ;
     (let ([resl (fx x)]) ;
       (if~
         [= resl tar] ;(inexa
@@ -4518,15 +4520,16 @@ to-test:
 )
 
 (define (fib0 n)
-  (define (_ n)
-    (if [< n 3] 1
-      (+
-        [_ (- n 2)]
-        [_ (- n 1)]
-  ) ) )
-  (if (< n 0) 0
-    (_ n)
-) )
+  (define (_ n) ;
+    (case n ;
+      ([0]    0)
+      ([1 2]  1)
+      (else
+        (fx+ [_ (fx- n 2)] ;
+          [_ (fx1- n)] ;
+  ) ) ) )
+  (_ n)
+)
 ;(cost (fib0 42)) ;realtime = 1.111~1.176 s
 ;gmp: (fib 1E) just 1s
 
@@ -4558,20 +4561,22 @@ to-test:
 ;(elapse(fac 50000)) ;=> elapse = 1.372~1.4 s
 
 (def (round% x)
-  (let ([f (floor x)])
-    (if [>= (- x f) 0.5]
-      (1+ f)
-      f
+  (let ([fl (floor x)])
+    (if [>= (- x fl) 0.5]
+      (1+ fl)
+      fl
 ) ) )
 
-(def myround
+;round*
+(def myround ;when input exa flt, is (4~)6x ~ than round
   (case-lam
-    ([fl nFlt]
-      (let ([fac (pow 10 nFlt)])
-        (inexact (/ [round% (* fl fac)] fac)) ;@
+    ([flt nFlt]
+      (let ([fac (pow 10. nFlt)]) ;
+        (/ [round% (* fac [inexa flt])] fac) ;
     ) )
-    ([fl] (myround fl 0))
-) )
+    ([flt] ;(exact (#%round [inexa flt])) ;if exa should ret int
+      (#%round flt) ;when input inexa flt, is 1.1(~4.5)x @ than round
+) ) )
 
 ;(for (x 128) (echol [floor->fix(redu y=ax2+bx+c [conz abc x])]))
 ;(for (x 128) (print-to-file "1.txt" [floor->fix(redu y=ax2+bx+c [conz abc x])]))
@@ -5729,7 +5734,7 @@ to-test:
     ( [time (current-time)]
       [sec  (time-second time)]
       [nano (time-nanosecond time)] )
-    [+ (* sec [pow 10 3]) (.* nano [pow 10 -6])] ;(real-time)?
+    [+ (* sec [pow 10. 3.]) (* nano [pow 10. -6.])] ;(real-time)?
     ;(list sec nano)
 ) )
 
