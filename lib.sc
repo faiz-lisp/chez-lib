@@ -4,14 +4,15 @@
 
 #|
 == Chez-lib.sc (mainly for Windows NT) - written by Faiz
-   ________  __                             __   __  _
-  /    ___ \|  |__   ____ _______          |  | |__|| |__  
-  /    \  \/|  |  \_/ __ \\__   /   ______ |  | |  || __ \ 
-  \     \___|  |\  |  ___/  /  /_  /_____/ |  |_|  || \_| \
-   \_______/\__||__|\_____>/_____\         |____/__|\_____/
+   ________  __                            __   __  _
+  /    ___ \|  |__   ____ _______         |  | |__|| |__  
+  /    \  \/|  |  \_/ __ \\__   /   _____ |  | |  || __ \ 
+  \     \___|  |\  |  ___/  /  /_  /____/ |  |_|  || \_| \
+   \_______/\__||__|\____> /_____\        |____/__|\_____/
         
   - Update notes:
     - 1.99
+      - Zk upd: doremi->Hz; add: call-xn
       - ZJ upd: ~=; add: pow/, pow-root
       - Zj upd: avg%, UI
       - ZI fix: deep&
@@ -456,6 +457,7 @@
     ([_ (k e more ...) (bd ...)]
     #'(if% (more ...) (bd ... [k e])) )
 ) )
+
 (def-syt (if~ stx)
   (syt-case stx ()
     ([_ bd ...]
@@ -3045,24 +3047,25 @@ to-test:
 (def (xn-mk-list% xns)
   (def (_ x n ys)
     (if [> n 0]
-      (cons x [_ x (1- n) ys])
+      (cons x [_ x (1- n) ys]) ;
       (if (nilp ys) nil
-        (if [nilp(cdr ys)] (li (car ys))
+        (if [nilp (cdr ys)]
+          (list (car ys))
           [_ (car ys) (cadr ys) (cddr ys)]
   ) ) ) )
   (_ nil 0 xns)
 )
-(def (xn-mk-list . xns) (xn-mk-list% xns))
+(def (xn-mk-list . xns) (xn-mk-list% xns)) ;
 
 (def (nx->list n x) ;a bit faster than make-list
   (def (_ n rest)
-    (cond [(< n 1) rest]
+    (cond
+      [(< n 1) rest]
       [else
         (_ (1- n) [cons x rest]) ] ; cons is fast
   ) )
   (_ n nil)
 )
-(def (xn2lis x n) (nx->list n x))
 
 (defn nlist% (xs n) ;xs need append is slow
   (def [_ n ret]
@@ -3613,6 +3616,10 @@ to-test:
   (map deep-rev xs)
 )
 
+(def (call-xn g x n)
+  (redu g (xn->list x n))
+)
+
 ; demo
 
 ;(cost (gotcha 24 '(1 2 5 10 nil) '(+ - * / eq id cons list) =))
@@ -3862,19 +3869,20 @@ to-test:
     (eq xx (mod num tmp))
 ) )
 
-(setq *max-deviation* (- [expt (sqrt 2) 2] 2)) ;?
-(setq *max-deviation-ratio* ;
-  (/ ;
-    (1-
-      (/
-        (pow (sqrt 2)) ;
-        2
-    ) )
-    2
-) )
-(def/va (~= a b [num-prec F]) ;(rcurry ~= 15)
+(setq
+  *max-deviation* (- [expt (sqrt 2) 2] 2) ;~ > 4e-16
+  *max-deviation-ratio* *max-deviation*
+  ; (/ ;
+    ; (1-
+      ; (/
+        ; (pow (sqrt 2)) ;
+        ; 2 ) ) ;
+    ; 2 ) ;
+)
+
+(def/va (~= a b [num-prec F]) ;(rcurry ~= 15) ;a b?
   (let
-    ( (max-deviation-rat
+    ( (max-deviation
         (if num-prec
           [/ 1. (pow 10. num-prec)]
           *max-deviation-ratio* ;~ > pow 10 16
@@ -3884,7 +3892,7 @@ to-test:
         (1-
           (/ a b) ;
       ) )
-      max-deviation-rat
+      max-deviation
 ) ) )
 
 (def distance
@@ -4494,7 +4502,7 @@ to-test:
       (if (< m 1) ret
         [_ (cons 0 ret) (1- m)]
     ) )
-    [_ [cons 1 (xn2lis 0 i)] m] ;
+    [_ [cons 1 (xn->list 0 i)] m] ;
   )
   (def (_ ret i m)
     (if [< m 0] ret
@@ -4871,7 +4879,7 @@ to-test:
       (let
         ( [things (ls s-path)]
           [rel-path (lam (x) [strcat s-path "/" x])] )
-        (def (_ ret xs)
+        (def (_ ret xs) ;cnt-file?
           (if [nilp xs] ;
             (if (nilp ret) ss ret) ;(if (<= num 0) ret ;
             (let/ad xs
@@ -4900,27 +4908,7 @@ to-test:
     (~ s-path)
 ) )
 
-;码
-(setq
-  mm/m  1000
-  m/inch  0.0254
-  mm/inch (* mm/m m/inch) ;25.4
-)
-
-(defn diagonal-length(x y) [sqrt(redu-map + pow (li x y))])
-
-(defn mm->inch (mm) ;inch(/cun)
-  ;(* mm 0.0393701) ;英寸Inch
-  ;(/ mm 25.4)
-  (/ mm mm/inch)
-  ;(* mm 0.03)  ;寸?
-)
-(defn mm->cun (mm)
-  (inexact(* mm 1/300))  ;cun
-)
-(defn inch->mm (inch) (* inch mm/inch))
-
-(defn cm->ma (cm) (- [* 2 cm] 10))
+(def (diagonal-length x y) [sqrt (redu-map + pow (list x y))])
 
 ;theory
 
@@ -5012,7 +5000,7 @@ to-test:
 
 (def (chur num) ;num >= 0
   (lam-cps (f x)
-    ;([redu compose (xn2lis f num)] x) ;
+    ;([redu compose (xn->list f num)] x) ;
     ([compose-n f num] x) ;
 ) )
 (def (church num . xs) ;num >=? 0
@@ -5904,7 +5892,7 @@ to-test:
 ;num2lis num2abc abc2num
 
 (def (repeats xs n) ;ng
-  (redu (curry map li) (xn2lis xs n))
+  (redu (curry map li) (xn->list xs n))
   ; (redu (curry map-all list)
     ; (nx->list n xs) )
 )
@@ -6070,7 +6058,7 @@ to-test:
 ) ) )
 
 (def (doremi->Hz one)
-  (let ([mapp (list Do Do. Re Re. Mi Fa Fa. So So. La La. Si)]) ;
+  (let ([mapp (list Do Do2 Re Re2 Mi Fa Fa2 So So2 La La2 Si)]) ;
     (nth mapp one)
 ) )
 
@@ -6087,10 +6075,6 @@ to-test:
     ) T
 ) )
 
-;
-
-(def (getcwd) (str-repl (command-result "cd") "\r\n" ""))
-
 ; settings
 
 ; setq global vars
@@ -6100,11 +6084,11 @@ to-test:
 (setq
   *syms-numbers* (range 0 9)
   *syms-Letters* (map [flow char->string str->sym] (str->list "ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
-  *chs-numbers* [map digit->char (range 0 9)]
-  *chs-Letters* (str->list "ABCDEFGHIJKLMNOPQRSTUVWXYZ") ;A~H 8
+  *chs-numbers*  [map digit->char (range 0 9)]
+  *chs-Letters*  (str->list "ABCDEFGHIJKLMNOPQRSTUVWXYZ") ;A~H 8
 )
 
-(setq *current-path* (str-repl (command-result "cd") "\r\n" "")) ; ?"Pro File"
+(setq *current-path* (cd)) ; ?"Pro File"
 
 ; (def car car%) ;
 ; (def cdr cdr%)
