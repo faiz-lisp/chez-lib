@@ -12,6 +12,7 @@
         
   - Update notes:
     - 1.99
+      - Zl upd: .avg
       - ZK fas: myround -> round*
       - Zk upd: doremi->Hz; add: call-xn
       - ZJ upd: ~=; add: pow/, pow-root
@@ -3764,7 +3765,7 @@ to-test:
 )
 
 (def (.avg . xs)
-  (avg% xs .+)
+  (avg% xs 0.)
 )
 
 (def %
@@ -4560,45 +4561,28 @@ to-test:
 )
 ;(elapse(fac 50000)) ;=> elapse = 1.372~1.4 s
 
-(def (round% x)
+(def (round% x) ;
   (let ([fl (floor x)])
     (if [>= (- x fl) 0.5]
       (1+ fl)
       fl
 ) ) )
 
-;round*
 (def myround ;when input exa flt, is (4~)6x ~ than round
   (case-lam
-    ([flt nFlt]
-      (let ([fac (pow 10. nFlt)]) ;
+    ([flt] ;(exact (#%round [inexa flt]))
+      (#%round flt) ) ;when input inexa flt, is 1.1(~4.5)x @ than round
+    ([flt nFlt] ;if exa should ret int
+      (let ( ;[conv (if [and (exact? flt) (<= nFlt 0)] exact id)] ;
+          [fac (pow 10. nFlt)] ) ;(conv ;@
         (/ [round% (* fac [inexa flt])] fac) ;
-    ) )
-    ([flt] ;(exact (#%round [inexa flt])) ;if exa should ret int
-      (#%round flt) ;when input inexa flt, is 1.1(~4.5)x @ than round
-) ) )
-
-;(for (x 128) (echol [floor->fix(redu y=ax2+bx+c [conz abc x])]))
-;(for (x 128) (print-to-file "1.txt" [floor->fix(redu y=ax2+bx+c [conz abc x])]))
-#|
-(setq abc (math:points->parabola 1 127  127 11  253 1)) ;其实可以检查abc给用户提示
-(clean-file "1.txt")
-(setq resl (map [lam[x](str(floor->fix(redu y=ax2+bx+c [conz abc x])))] (range 256)))
-(setq ss (redu (curry str/sep " ") resl))
-[print-to-file "1.txt" ss]
-[sys "npp 1.txt"]
-|#
-;(map [lam[x](floor->fix(redu y=ax2+bx+c [conz abc x]))] (range 12))
-;(sys (str "cd.>" "1.txt")) ;cre-new-file 1.txt
-;(sys (str "echo " "a" ">>1.txt")) ;print-to-file
-
+) ) ) )
 
 ;matrix:
 ;'(1 2 3 4 5 6) --m*3->
 ;a mat: '((1 2 3)(4 5 6))
 ;((mat m 3) 1 2 3 4 5 6)
 ;(_ numForOneRow aFlattenList): (_ 3 (range 6)) -> '((0 1 2)(3 4 5))
-
 
 ;?matlen submat
 (def (dotmul da db) ;(1,2,3)*(4,5,6) ;dot-multiply: point1 point2
