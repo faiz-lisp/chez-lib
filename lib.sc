@@ -12,6 +12,8 @@
         
   - Update notes:
     - 1.99
+      - Zm add: -% cmp% close-to%
+      - ZL add: str-count
       - Zl upd: .avg
       - ZK fas: myround -> round*
       - Zk upd: doremi->Hz; add: call-xn
@@ -47,7 +49,6 @@
       - G upd : divide
       - F add : str-trim-all
       - D upd : case (compose); fix : gotcha;
-      - d upd : church
       - C add : rlist
       - a add : (collect 10 (do-sth))
       - ~ add : int<->str/system, digit<->char, global vars
@@ -2159,7 +2160,7 @@ to-test:
     [rev (_ nil KVs Ks)]
 ) )
 
-(def/va (rotate! xs [n 1])
+(def/va (rotate! xs [n 1]) ;ret?
   (for [n] (car->end! xs)) ;[rev? F] ;end->car!
 )
 
@@ -2219,6 +2220,56 @@ to-test:
       (fill-lhs-nx xs m x)
       xs
 ) ) )
+
+;(-% 'x 'y '(a y s x z))
+;(-% 3 1 '(1 2 3 4)) ;1 nex nex -> 3 ;distance
+(def (-% x y zs)
+  (def (~ zs flg i f) ;
+    (if [nilp zs] (f i)
+      (let/ad zs
+        (if~
+          [eq y a]
+            (if flg (f i) ;
+              [~ d T i 1+] )
+          [eq x a]
+            (if flg (f i) ;
+              [~ d T i 1-] )
+          [~ d flg (f i) f]
+  ) ) ) )
+  (if [eq x y] 0
+    [~ zs F 0 id]
+) )
+
+;cmp% x y zs -> '< > =
+;(cmp% 'x 'y '(a y s d x z)) ;-> '< > =
+(def/va (cmp% x y zs [ret-eq '=]) ;neq%
+  (def (~ zs) ;
+    (if [nilp zs] nil
+      (let/ad zs
+        (if~
+          [eq x a] '<
+          [eq y a] '>
+          [~ d]
+  ) ) ) )
+  (if [eq x y] ret-eq
+    [~ zs] ;
+) )
+
+;(close-to 3 '(1 2 4 5) '(1 2 3 4 5)) ;-> 2
+;(close-to 'x '(a b y z) '(v a b x y z o)) ;-> 'b
+(def/va (close-to% x ys zs [sorted? F] [fyx/z -%] [mk-lt/z (lam(zs) (lam(x y) (eq (cmp% x y zs) '<)))]) ;half?
+  (let ([ys (if sorted? ys (qsort ys [mk-lt/z zs]))]) ;
+    (def (~ ys las dis)
+      (if (nilp ys) las
+        (let/ad* ys
+          ([new-dis (fyx/z a x zs)])
+          (if (>= new-dis 0)
+            (if [redu < (map abs (list new-dis dis))] ;
+              a las )
+            [~ d a new-dis]
+    ) ) ) )
+    (~ (cdr ys) (car ys) [fyx/z (car ys) x zs]) ;
+) )
 
 (def find-x-match
   (case-lam
@@ -2791,6 +2842,21 @@ to-test:
       (cons a [_ d])
 ) ) )
 
+;(count [str->list "xs"] [str->list "lkjxslkxjslkxslkxjslk"])
+(def (count YS xs)
+  (def (~ xs ys i)
+    (if [nilp xs] i
+      (let/ad xs
+        (if [nilp ys]
+          (~ xs YS (1+ i))
+          (let ([ay (car ys)] [dy (cdr ys)])
+            (if [eq a ay]
+              (~ d dy i)
+              (~ d YS i)
+  ) ) ) ) ) )
+  (~ xs YS 0)
+)
+
 ; todo: 1层压缩 -> 全压缩
 (def/va (compress% x n xs [= eq])
   (def (_ xs x n)
@@ -2930,6 +2996,11 @@ to-test:
 (def/va (str-trim-head ss [mark " "])
   (let ([conv str->list])
     (list->str [trim-head (conv ss) (conv mark)])
+) )
+
+(def (str-count s ss)
+  (let ([conv str->list])
+    (count [conv s] [conv ss])
 ) )
 
 (def (hex dec)
