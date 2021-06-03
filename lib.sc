@@ -12,6 +12,8 @@
         
   - Update notes:
     - 1.99
+      - Zn upd: int->str/system
+      - ZM add: fac2
       - Zm add: -% cmp% close-to%
       - ZL add: str-count
       - Zl upd: .avg
@@ -2930,13 +2932,13 @@ to-test:
 ;(num->int/system num 36~62) ;numeration/num<->str
 (def/va (int->str/system num [scale 10] [chars (append *chs-numbers* *chs-Letters*)]) ;'(0 1 .. A .. Z)
   (def (_ ret num)
-    (if [eq 0 num] ret
+    (if [<= num 0] ret ;eq
       (let
         ( [rem (% num scale)]
           [quot (quotient num scale)] )
         [_ (cons rem ret) quot]
   ) ) )
-  (list->str [map (curry xth chars) (_ nil num)])
+  (list->str [map (curry xth chars) (_ nil [int num])]) ;
 )
 
 (def/va (str->int/system snum [scale 10] [chars (append *chs-numbers* *chs-Letters*)]) ;snum ;case?
@@ -3566,7 +3568,7 @@ to-test:
 )
 ;(d-len '[((a b)c)(d e)]) ;-> 5
 
-(defn flat-and-remov (x xs)
+(def (flat-and-remov x xs)
   (let ([g (eq/eql x)])
     (def (_ xs ret)
       (cond
@@ -3812,9 +3814,8 @@ to-test:
 
 (def (xor . xs)
   (def (xor2% a b) ;logical ;(bitwise-xor 1 1 2 2 2 2 3 3 3)
-    (if~ [eq a b] F
-      T
-  ) )
+    (if~ [eq a b] F T)
+  )
   (redu~ xor2% [map not xs]) ;not issue when: (xor x)
 )
 
@@ -4622,14 +4623,22 @@ to-test:
 ;(elapse(fib 200000)) ;=> elapse = 0.082 s
 ;(cost (chk 100000 fib 42)) ;-> 225ms
 
-(def (fac n) ;how to be faster, such as gmp
-  (def (_ ret i)
-    (if (eq i n) ;
-      (* ret i) ;
-      [_ (* ret i) (fx1+ i)]
-  ) )
-  [_ 1 1] ;
-)
+(def (fac2 s e)
+  (let
+    ([Init 1])
+    (def [~ ret i]
+      (if
+        [> i e] ret
+        [~ (* ret i) (fx1+ i)]
+    ) )
+    [~ Init s]
+) )
+
+(def (fac n)
+  (let
+    ([S 1]) ;2 ;
+    (fac2 S n)
+) )
 ;(elapse(fac 50000)) ;=> elapse = 1.372~1.4 s
 
 (def (round% x) ;
