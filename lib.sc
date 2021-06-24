@@ -12,6 +12,7 @@
         
   - Update notes:
     - 1.99
+      - ZN upd: ./
       - Zn upd: int->str/system
       - ZM add: fac2
       - Zm add: -% cmp% close-to%
@@ -3730,14 +3731,14 @@ to-test:
       [fail] ;fail-and-goon
 ) ) )
 
-(def/va (mem?-and-do x xs [= eql] [get id] [f-x id]) ;
+(def/va (mem?-and-do x xs [= eql] [get id] [f-x id]) ;keep whole xs
   (def (_ ret xs)
     (if~
       [nilp xs] F
       (let/ad xs
         (if [= x [get a]]
-          (append [rev ret] (cons [f-x a] d)) ;
-          (_ [cons a ret] d)
+          (append [rev ret] (cons [f-x a] d)) ;(cons [f-x a] d) ;
+          (_ [cons a ret] d) ;(_ ret d) ;
   ) ) ) )
   (_ nil xs)
 )
@@ -3749,7 +3750,7 @@ to-test:
       (let/ad xs ;mem?-and-do a xs eq car do
         (letn
           ( [do-sth (lam (xs) (do-for xs [lam(xs)(1+ (cadr xs))] [lam(xs x)(list (car xs) x)]))]
-            [tmp (mem?-and-do a ens = car do-sth)] ) ;
+            [tmp (mem?-and-do a ens = car do-sth)] ) ;?
           (if tmp
             [_ tmp d]
             [_ (cons [list a 1] ens) d] ;rev
@@ -3780,7 +3781,7 @@ to-test:
     (letn
       ( [r5 (pow 2 [- 5 8])] [r6 (pow 2 [- 6 8])] ;
         [conv (lam (rat n) [fixnum (* rat n)])]
-        [resl (+ (conv r5 b) (* (conv r6 g) [pow 2 5]) (* (conv r5 r) [pow 2 11]))] ;
+        [resl (+ (conv r5 b) (* (conv r6 g) [pow 2 5]) (* (conv r5 r) [pow 2 11]))] ;?
         [resl (if out-hex? (str "0x" (int->str/system resl 16)) resl)] )
       resl
 ) ) )
@@ -3840,15 +3841,18 @@ to-test:
   (avg% xs 0.)
 )
 
+(def ./
+  (case-lam
+    ([a] (/ 1. [exa->inexa a])) ;
+    (xs
+      (foldl (lam (a b) (/ a [exa->inexa b])) [exa->inexa (car xs)] (cdr xs))
+) ) )
+
 (def %
   (case-lam
-    [(x) (inexa(/ x 100))]
+    [(x) (inexa (/ x 100))]
     [(x . ys) (foldl mod x ys)]
 ) )
-
-(def (./ . xs)
-  (foldl / (exa->inexa [car xs]) (cdr xs))
-)
 (def (.* . xs)
   (foldl * (exa->inexa [car xs]) (cdr xs))
 )
@@ -4191,10 +4195,11 @@ to-test:
         [b2 (< s 3)] ) ;
     (~
       2 ;
-      (if b (fx1+ s)
+      (if b (1+ s)
         (if b2 3 s) )
       (fx- i (if b2 1 0))
 ) ) )
+
 (def primes ;todo _ s e
   (lam [s n]
     (def (~ s n ret)
@@ -4233,10 +4238,11 @@ to-test:
   (digest% xs [level 12] ;
     (doer
       (lam (x y)
-        (* [+ (sin x) 2] [+ (sin y) 2]) ;2?
+        ;(* [+ (sin x) 2] [+ (sin y) 2]) ;2?
+        [+ (sin x) (sin y) 3] ;>0
   ) ) )
   (let ([factor (pow 10 level)]) ;8~13
-    ([flow (curry * factor) round] ;? int *
+    ([flow (curry * factor) round int] ;? int *
       (id ;fold% doer
         ;(redu + xs)
         (fold% doer 1 xs) ;need seq ;foldl ;rec
@@ -4929,7 +4935,7 @@ to-test:
     [s-path "."]
     [case? T] ;[show-ori-when-fail? T]
     [more? T]
-    [chk-ext (rcurry mem? '("h" "cpp" "txt" "md"))] ;xls?
+    [chk-ext (rcurry mem? '("h" "cpp" "txt" "md" "xls" "html"))]
     [tar-format id] )
   (file/cont ss s-path case? more? chk-ext tar-format)
 )
@@ -4937,8 +4943,8 @@ to-test:
   (file/cont ss
     [s-path "."]
     [case? T] ;[show-ori-when-fail? T]
-    [more? F]
-    [chk-ext (rcurry mem? '("h" "cpp" "txt" "md"))] ;id case?
+    [more? F] ;
+    [chk-ext (rcurry mem? '("h" "cpp" "txt" "md" "xls" "html"))] ;
     [tar-format id] ;(rcurry str/sep-chars '[#\x0])
   )
   (letn
@@ -5143,19 +5149,19 @@ to-test:
     ; ((chur+ [chur-fib0(chur-1 n)]) [chur-fib0((chur- n)2)])
 ; ) )
 
-(def (Yc ~) ;F
-  (def [FF f] ;especial-f
-    (f f) )
-  (FF
-    (lam [_] ;self
-      (~
-        (lam (arg) ;y-func / ~
-          ( [FF _]
-            arg )
+(alias yc y-comb)
+
+(def (y-comb self)
+  ([lam (f) (f f)]
+    (lam (~)
+      (self
+        (lam arg
+          (redu [~ ~] arg) ;
 ) ) ) ) )
-(def (y-getln ~)
+
+(def (y-len ~)
   (lam (xs)
-    (if (nilp xs) 0
+    (if [nilp xs] 0
       (1+ [~ (cdr xs)])
 ) ) )
 
@@ -5806,7 +5812,7 @@ to-test:
   (if (str/pair/vec? x) eql eq)
 )
 
-(def (mem?% x xs) (bool (mem? x xs)))
+;(def (mem?% x xs) (bool (mem? x xs)))
 
 ;(setq a '(1 2 2 3 3 3 4)) ;~> '(2 3)
 (def (filter-same xs)   ;OK ;exist-same?
