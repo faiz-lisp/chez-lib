@@ -8,11 +8,13 @@
   /    ___ \|  |__   ____ _______         |  | |__|| |__  
   /    \  \/|  |  \_/ __ \\__   /   _____ |  | |  || __ \ 
   \     \___|  |\  |  ___/  /  /_  /____/ |  |_|  || \_| \
-   \_______/\__||__|\____> /_____\        |____/__|\_____/
+   \_______/\__||__|\____/ /_____\        |____/__|\_____/
         
   - Update notes:
     - 1.99
-      - ZN upd: ./
+      - Zp upd: list/nth xs [n0 1]
+      - ZO add: *chs-letters*
+      - Zo upd: digest%
       - Zn upd: int->str/system
       - ZM add: fac2
       - Zm add: -% cmp% close-to%
@@ -73,7 +75,7 @@
     - 1.97
       - w Add : (deep& rev char-downcase '((#\a #\s) #\D)) ~> '(#\d (#\s #\a))
       - v Add : (deep-exist-match? [lam (x) (cn-char? x)] '((#\我) #\3)) ~> T
-      - Q Add : (trim '(1 2 1 2 1 1 2 3 1 2) '(1 2)) ~> '(1 1 2 3)
+      - Q Add : (trim '(1 2 1 2 1 1 2 3 1 2) '(1 2)) ~> '(1 1 2 3) ;
       - O upd : (beep [456] [500]);\nadd : getcwd;
       - N add : def-ffi, shell-execute
       - L fix : for: map -> for-each; upd : tail=list-tail; add : tail%
@@ -2534,14 +2536,14 @@ to-test:
 
 ;
 
-(defn list/nth- (xs) ;list->nth~ xs
-  (def (_ xs n)
+(def/va (list/nth- xs [n0 1]) ;list->nth~ xs
+  (def [_ xs n]
     (if (nilp xs) nil
       (cons
-        (li n (car xs))
-        [_ (cdr xs) (fx1+ n)]
+        (list n (car xs))
+        [_ (cdr xs) (1+ n)] ;
   ) ) )
-  (_ xs 1)
+  [_ xs n0] ;
 )
 (defn list/-nth (xs) ;list->nth~ xs
   (def (_ xs n)
@@ -4235,13 +4237,14 @@ to-test:
 ) )
 
 (def/va
-  (digest% xs [level 12] ;
+  (digest% xs [level 12] ;7,8~12
     (doer
       (lam (x y)
         ;(* [+ (sin x) 2] [+ (sin y) 2]) ;2?
-        [+ (sin x) (sin y) 3] ;>0
+        ;[+ (sin x) (sin y) 3] ;>0
+        (+ [* (+ (sin x) (sin y)) 2] 5) ;1~9
   ) ) )
-  (let ([factor (pow 10 level)]) ;8~13
+  (let ([factor (pow 10 level)]) ;8~13 front-part
     ([flow (curry * factor) round int] ;? int *
       (id ;fold% doer
         ;(redu + xs)
@@ -6157,10 +6160,11 @@ to-test:
 (setq *paths* nil) ;shared ;ng name
 
 (setq
-  *syms-numbers* (range 0 9)
-  *syms-Letters* (map [flow char->string str->sym] (str->list "ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
   *chs-numbers*  [map digit->char (range 0 9)]
   *chs-Letters*  (str->list "ABCDEFGHIJKLMNOPQRSTUVWXYZ") ;A~H 8
+  *chs-letters*  (map char-downcase *chs-Letters*)
+  *syms-numbers* (range 0 9)
+  *syms-Letters* (map [flow char->string str->sym] *chs-Letters*)
 )
 
 (setq *current-path* (cd)) ; ?"Pro File"
