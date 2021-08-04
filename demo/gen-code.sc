@@ -26,9 +26,9 @@
 
 ;--
 
-(def (form-f8 fs) ;faster and "best"
+(def (form-f8 fs)
   (let-values
-    ( [(f m g h  i j k l) (redu values fs)] )
+    ( [(f m g h i j k l) (redu values fs)] )
     `(lam (x)
       (let ([X (,m (,f x))]) ;to simplify id id-last null ..
         (def (_ ret x)
@@ -68,27 +68,29 @@
   (f8 f rev g h i j  k l)
 )
 
+;null id-last id zero one
+;cons rev append
+;car cadr cdr last
+;nilp atomp consp
+;eq = eql >
+;1+ 1- + -
+;`(car rev cadr nilp id-last id cons) ;cdr? null?
+;[ops `(id id-last null  nilp cdr car cons)] ) ;(cons x)?
+    
 ;(code-for '(a b) '(b a))
 (def/va
   (code-for in out [fx f7.2] [n-fns 7] [form-fx form-f7.2]
-    ;null id-last id zero one
-    ;cons rev append
-    ;car cadr cdr last
-    ;nilp atomp consp
-    ;eq = eql >
-    ;1+ 1- + -
-    ;`(car rev cadr nilp id-last id cons) ;cdr? null?
     [ops `(rev  null id id-last nilp cdr cadr car cons)]
+    ;[ops `(null id id-last nilp cdr cadr car cons)]
     ;[ops `(fx* fx1- one eq null id id-last)]
     [= eql]
     ;[= eq]
   ) ;rev last
-    ;[ops `(id id-last null  nilp cdr car cons)] ) ;(cons x)?
   (clean-choose)
   (reset-randseed)
   (letn
-    ( (ops  (rand-seq ops))
-      ;[ops     (rev ops)]
+    ( (ops     (rand-seq ops))
+      ;[ops    (rev ops)]
       [op-syms ops] ;!
       [ops     (map ev  op-syms)] ;!
       [op-mapp (zip ops op-syms)]

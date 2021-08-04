@@ -12,6 +12,7 @@
         
   - Update notes:
     - 1.99
+      - ZP add: int<->list/scale
       - Zp upd: list/nth xs [n0 1]
       - ZO add: *chs-letters*
       - Zo upd: digest%
@@ -26,7 +27,6 @@
       - Zj upd: avg%, UI
       - ZI fix: deep&
       - Zi add: int->list next-to
-      - ZH upd: digest%
       - Zg add: fold% exist-same? max-min
       - Zf upd: randnums fold int
       - Ze upd: range/total api-ls
@@ -2964,6 +2964,26 @@ to-test:
   [map (curry xth Syms) (_ nil num)]
 )
 
+;(int->list/scale 123 10) -> '(1 2 3)
+(def/va (int->list/scale num [scale 10])
+  (def (_ ret num)
+    (if [eq 0 num] ret
+      (let
+        ( [rem (% num scale)]
+          [quot (quotient num scale)] )
+        [_ (cons rem ret) quot]
+  ) ) )
+  (_ nil num)
+)
+
+(def/va (list->int/scale xs [scale 10])
+  (def (_ ret xs)
+    (if [nilp xs] ret
+      [_ (+ (* ret scale) [car xs]) (cdr xs)] ;
+  ) )
+  (_ 0 xs)
+)
+
 ; string
 
 ;(str-repl% "adssadas.ds.ad" '("ad" "s.") "X")
@@ -4657,6 +4677,7 @@ to-test:
       fl
 ) ) )
 
+;(_ 123.5) ;floor?
 (def myround ;when input exa flt, is (4~)6x ~ than round
   (case-lam
     ([flt] ;(exact (#%round [inexa flt]))
