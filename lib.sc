@@ -12,10 +12,9 @@
         
   - Update notes:
     - 1.99
+      - Zq chg: digest%
       - ZP add: int<->list/scale
       - Zp upd: list/nth xs [n0 1]
-      - ZO add: *chs-letters*
-      - Zo upd: digest%
       - Zn upd: int->str/system
       - ZM add: fac2
       - Zm add: -% cmp% close-to%
@@ -2963,7 +2962,6 @@ to-test:
   ) ) )
   [map (curry xth Syms) (_ nil num)]
 )
-
 ;(int->list/scale 123 10) -> '(1 2 3)
 (def/va (int->list/scale num [scale 10])
   (def (_ ret num)
@@ -4029,7 +4027,7 @@ to-test:
   (def (_ factors n) ;
     (let ([factor (min-factor n)]) ;
       (if factor
-        [_ (cons factor factors) (/ n factor)]
+        [_ (cons factor factors) (quot n factor)]
         (cons n factors) ;
   ) ) )
   (_ nil n)
@@ -4260,9 +4258,8 @@ to-test:
   (digest% xs [level 12] ;7,8~12
     (doer
       (lam (x y)
-        ;(* [+ (sin x) 2] [+ (sin y) 2]) ;2?
-        ;[+ (sin x) (sin y) 3] ;>0
-        (+ [* (+ (sin x) (sin y)) 2] 5) ;1~9
+        ;(+ [* (+ (sin x) (sin y)) 2] 5) ;1~9
+        [+ (sin (* [+ (sin x) 2] (1+ y))) 2]
   ) ) )
   (let ([factor (pow 10 level)]) ;8~13 front-part
     ([flow (curry * factor) round int] ;? int *
