@@ -12,10 +12,9 @@
         
   - Update notes:
     - 1.99
+      - Zq upd: digest%
       - ZP add: int<->list/scale
       - Zp upd: list/nth xs [n0 1]
-      - ZO add: *chs-letters*
-      - Zo upd: digest%
       - Zn upd: int->str/system
       - ZM add: fac2
       - Zm add: -% cmp% close-to%
@@ -2963,7 +2962,6 @@ to-test:
   ) ) )
   [map (curry xth Syms) (_ nil num)]
 )
-
 ;(int->list/scale 123 10) -> '(1 2 3)
 (def/va (int->list/scale num [scale 10])
   (def (_ ret num)
@@ -4029,7 +4027,7 @@ to-test:
   (def (_ factors n) ;
     (let ([factor (min-factor n)]) ;
       (if factor
-        [_ (cons factor factors) (/ n factor)]
+        [_ (cons factor factors) (quot n factor)]
         (cons n factors) ;
   ) ) )
   (_ nil n)
@@ -4260,18 +4258,16 @@ to-test:
   (digest% xs [level 12] ;7,8~12
     (doer
       (lam (x y)
-        ;(* [+ (sin x) 2] [+ (sin y) 2]) ;2?
-        ;[+ (sin x) (sin y) 3] ;>0
-        (+ [* (+ (sin x) (sin y)) 2] 5) ;1~9
+        ;(+ [* (+ (sin x) (sin y)) 2] 5) ;1~9
+        ;[+ (sin (* [+ (sin x) 2] (1+ y))) 2] ;*4+5
+        (+ 5. [* 4. (sin (* (sin x) (fx1+ y)))]) ;*3+4?
   ) ) )
-  (let ([factor (pow 10 level)]) ;8~13 front-part
-    ([flow (curry * factor) round int] ;? int *
-      (id ;fold% doer
-        ;(redu + xs)
-        (fold% doer 1 xs) ;need seq ;foldl ;rec
-        ;(len xs) ;
-        nil
-) ) ) )
+  (let ([factor (pow 10. level)]) ;8~13 front-part
+    ([flow (rcurry * factor) round int] ;? int *
+      ;(id ;fold% doer
+        (fold% doer 1. xs) ;need seq ;foldl ;rec
+        ;nil
+) ) ) ;)
 
 (def (leap-year? yr)
   (or (=0 [% yr 400])
