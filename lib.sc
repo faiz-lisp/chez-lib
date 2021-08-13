@@ -12,6 +12,7 @@
         
   - Update notes:
     - 1.99
+      - ZQ upd: tail%
       - Zq upd: digest%
       - ZP add: int<->list/scale
       - Zp upd: list/nth xs [n0 1]
@@ -2131,11 +2132,11 @@ to-test:
 )
 
 ;(list/sep% '(1 2 3) '(4 5)) ~> '(1 4 5 2 4 5 3)
-(def (list/seps xs seps)
-  (def (_ ret xs) ;
-    (if (nilp xs) ret
+(def (list/seps xs seps) ;head? tail?
+  (def (_ ret xs)
+    (if [nilp xs] ret ;
       (let ([a (car xs)])
-        [_ (cons a (append seps ret)) (cdr xs)]
+        [_ (cons a (append seps ret)) (cdr xs)] ;
   ) ) )
   (let ([rs (rev xs)])
     [_ [list (car rs)] (cdr rs)]
@@ -2359,15 +2360,17 @@ to-test:
   (_ xs ys nil)
 )
 
-(def (tail% xs m)
+(def/va (tail% xs m [tail? F])
   (def (_ xs m)
     (if~
       (nilp xs) nil
       (< m 1) xs
       [_ (cdr xs) (1- m)]
   ) )
-  (_ xs m)
-)
+  (if tail?
+    (_ xs (- (len xs) m))
+    (_ xs m)
+) )
 
 (def (head% xs m)
   (def (_ xs n)
@@ -4260,7 +4263,7 @@ to-test:
       (lam (x y)
         ;(+ [* (+ (sin x) (sin y)) 2] 5) ;1~9
         ;[+ (sin (* [+ (sin x) 2] (1+ y))) 2] ;*4+5
-        (+ 5. [* 4. (sin (* (sin x) (fx1+ y)))]) ;*3+4?
+        (+ 5. [* 4. (sin (* (sin x) (fx1+ y)))]) ;1~9 ;*3+4?
   ) ) )
   (let ([factor (pow 10. level)]) ;8~13 front-part
     ([flow (rcurry * factor) round int] ;? int *
