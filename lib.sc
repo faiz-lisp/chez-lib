@@ -13,7 +13,7 @@
   - Update notes:
     - 1.99
       - ZQ upd: tail%
-      - Zq upd: digest%
+      - Zq chg: digest%
       - ZP add: int<->list/scale
       - Zp upd: list/nth xs [n0 1]
       - Zn upd: int->str/system
@@ -4262,8 +4262,12 @@ to-test:
     (doer
       (lam (x y)
         ;(+ [* (+ (sin x) (sin y)) 2] 5) ;1~9
+<<<<<<< HEAD
         ;[+ (sin (* [+ (sin x) 2] (1+ y))) 2] ;*4+5
         (+ 5. [* 4. (sin (* (sin x) (fx1+ y)))]) ;1~9 ;*3+4?
+=======
+        [+ (sin (* [+ (sin x) 2] (1+ y))) 2]
+>>>>>>> 0409ea8f586b7ee830814b26ad14ae84aae802fe
   ) ) )
   (let ([factor (pow 10. level)]) ;8~13 front-part
     ([flow (rcurry * factor) round int] ;? int *
