@@ -12,6 +12,7 @@
         
   - Update notes:
     - 1.99
+      - Zr add: get-https-ret: url [tmp-file]
       - ZQ upd: tail%
       - Zq chg: digest%
       - ZP add: int<->list/scale
@@ -3722,6 +3723,16 @@ to-test:
 
 ; demo
 
+(def/va (get-https-ret url [file "123.txt"])
+  (let
+    ( [ret nil]
+      [cmd (str "wget -q --no-check-certificate -O " file " \"" url "\"")] ) ;no chk for ssl
+    (sys cmd)
+    (setq ret (read-file-0 file)) ;
+    (delete-file file) ;
+    ret
+) )
+
 ;(cost (gotcha 24 '(1 2 5 10 nil) '(+ - * / eq id cons list) =))
 ;(cost (_ 24 '(1 2 3 4 nil + - * / cons eq list) '() =))
 ;(cost (_ (church 2) '(1) '(church church1+) church=))
@@ -6215,7 +6226,7 @@ to-test:
                 "\""
 ) ) ) ) ) ) ) ) ;bug if just use load
 
-(define (load-relatived file)
+(define (load-relatived file) ;cd
   (load
     (string-append *script-path* ;
       [(if (sym? file) symbol->string id) file]
