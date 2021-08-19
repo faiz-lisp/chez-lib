@@ -12,6 +12,7 @@
         
   - Update notes:
     - 1.99
+      - ZR add: max-cnt-of-same: xs [lt <]
       - Zr add: get-https-ret: url [tmp-file]
       - ZQ upd: tail%
       - Zq chg: digest%
@@ -2969,9 +2970,9 @@ to-test:
 ;(int->list/scale 123 10) -> '(1 2 3)
 (def/va (int->list/scale num [scale 10])
   (def (_ ret num)
-    (if [eq 0 num] ret
+    (if [= 0 num] ret ;
       (let
-        ( [rem (% num scale)]
+        ( [rem (% num scale)] ;
           [quot (quotient num scale)] )
         [_ (cons rem ret) quot]
   ) ) )
@@ -4299,6 +4300,10 @@ to-test:
 )
 (def (strnum+ . snums)
   (number->string (redu~ + (map string->number snums)))
+)
+
+(def/va (max-cnt-of-same xs [lt <])
+  (nth [qsort (compress [qsort xs lt]) (lam (x y) [> (nth x 2) (nth y 2)])] 1 2)
 )
 
 ;math end
