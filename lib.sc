@@ -12,6 +12,7 @@
         
   - Update notes:
     - 1.99
+      - Zs Add: rand-filename
       - ZR add: max-cnt-of-same: xs [lt <]
       - Zr add: get-https-ret: url [tmp-file]
       - ZQ upd: tail%
@@ -2262,7 +2263,7 @@ to-test:
     [~ zs] ;
 ) )
 
-;(close-to 3 '(1 2 4 5) '(1 2 3 4 5)) ;-> 2
+;(close-to 3 '(1 2 4 5) '[1 2 3 4 5]) ;-> 2
 ;(close-to 'x '(a b y z) '(v a b x y z o)) ;-> 'b
 (def/va (close-to% x ys zs [sorted? F] [fyx/z -%] [mk-lt/z (lam(zs) (lam(x y) (eq (cmp% x y zs) '<)))]) ;half?
   (let ([ys (if sorted? ys (qsort ys [mk-lt/z zs]))]) ;
@@ -3724,7 +3725,7 @@ to-test:
 
 ; demo
 
-(def/va (get-https-ret url [file "123.txt"])
+(def/va (get-https-ret url [file (rand-filename 8 ".txt")])
   (let
     ( [ret nil]
       [cmd (str "wget -q --no-check-certificate -O " file " \"" url "\"")] ) ;no chk for ssl
@@ -4782,6 +4783,10 @@ to-test:
       (last d)
 ) ) )
 
+(def/va (rand-filename [name-len 8] [ext ".txt"] [chars *chs-letters*]) ;
+  (str (rand-list chars name-len) ext)
+)
+
 (define (read-file-0 file-name) ;guenchi
   (let ([p (open-input-file file-name)]) ;
     (let loop ([lst nil] [c (read-char p)])
@@ -5232,7 +5237,7 @@ to-test:
   (_ xs nil nil)
 )
 
-(def (most-match g? xs) ;_-left
+(def/doc (most-match g? xs) ;_-left
   (def (~ ret xs)
     (if (nilp xs) ret
       (let ([a (car xs)])
