@@ -12,6 +12,7 @@
         
   - Update notes:
     - 1.99
+      - ZS upd: divide-before
       - Zs Add: rand-filename
       - ZR add: max-cnt-of-same: xs [lt <]
       - Zr add: get-https-ret: url [tmp-file]
@@ -5698,7 +5699,7 @@ to-test:
 ;(divide-after '(x m k y) '(m k)) ;~> '([x m k] [y])
 (def (divide-after xs mark)
   (def (_ ret tmp xs ys)
-    (if (nilp xs) ;atomp
+    (if [nilp xs] ;atomp
       (cons tmp ret)
       (if (nilp ys)
         [_ (cons tmp ret) nil xs mark]
@@ -5710,20 +5711,27 @@ to-test:
   [deep-rev (_ nil nil xs mark)]
 )
 
-(def (divide-before xs mark)
-  (def (_ ret tmp xs ys flg)
+;aas
+;(divide-before (str->list "1asdsadas") (str->list "as"))
+(def (divide-before xs MARK)
+  (def (_ ret tmp tmp1 xs ys flg) ;flg for eq
     (if~
-      (nilp xs) ;atomp
-        (cons tmp ret) ;
-      (nilp ys) ;flag
-        [_ ret tmp xs mark T]
+      [nilp xs] ;atomp
+        (if (nilp ys)
+          (cons* tmp1 (redu append tmp) ret)
+          (cons (append tmp1 tmp) ret) ) ;@?
+      (nilp ys) ;flg ;
+        [_ (cons (redu append tmp) ret) nil tmp1 xs MARK F] ;
       (let ([ax (car xs)] [ay (car ys)] [dx (cdr xs)] [dy (cdr ys)])
-        (if (eq ax ay) ;tmp
-          (if flg [_ (cons tmp ret) (list ax) dx dy F]
-            [_ ret (cons ax tmp) dx dy flg] )
-          [_ ret (cons ax tmp) dx mark T]
-  ) ) ) )
-  [deep-rev (_ nil nil xs mark F)] ;
+        (if (eq ax ay)
+          (if flg
+            [_ ret tmp (cons ax tmp1) dx dy T]
+            [_ ret (cons tmp1 tmp) (cons ax nil) dx dy T] )
+          (if flg
+            [_ ret tmp tmp1 xs MARK F]
+            [_ ret tmp (cons ax tmp1) dx MARK F]
+  ) ) ) ) )
+  [deep-rev (_ nil nil nil xs MARK F)]
 )
 
 (def (divide-before-if xs g) ;-if
