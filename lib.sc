@@ -12,6 +12,7 @@
         
   - Update notes:
     - 1.99
+      - Zt add: get-time ~> '(9 0 0)
       - ZS upd: divide-before
       - Zs Add: rand-filename
       - ZR add: max-cnt-of-same: xs [lt <]
@@ -1501,6 +1502,13 @@ to-test:
 (alias callsnest call-snest)
 
 ; system
+
+(def (get-time)
+  (letn
+    ( [date (current-date)]
+      [hr (date-hour date)] [m (date-minute date)] [sec (date-second date)] )
+    (list hr m sec)
+) )
 
 ;ffi
 
