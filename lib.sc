@@ -12,6 +12,8 @@
         
   - Update notes:
     - 1.99
+      - ZU add: sleep-sec 1.01, sleep-ms 1010
+      - ZT fix: via relocating cdr-nilp
       - Zt add: get-time ~> '(9 0 0)
       - ZS upd: divide-before
       - Zs Add: rand-filename
@@ -1082,10 +1084,10 @@ to-test:
 
 (defsyt getf-xth-iter
   ( (_ x f1 i)
-    (if (<(len x)2) nil ;
+    (if (< (len x) 2) nil ;
       (if (eq (car x) 'f1)
         (fx1+ i)
-        (ev `(getf-xth-iter (cddr x) f1 (+ 2 i)))
+        (ev `(getf-xth-iter (cddr x) f1 (+ 2 i))) ;
 ) ) ) )
 
 (defsyt getf-xth
@@ -1095,7 +1097,7 @@ to-test:
 
 (defsyt setf* ;(_ mapA tagX a)
   ( [_ x f1 a]
-    (let ([i (getf-xth x f1)])
+    (let ([i (getf-xth x f1)]) ;
       (if [nilp i]
         (if *will-ret* x nil)
         (set-xth! x i a) ;
@@ -1378,18 +1380,21 @@ to-test:
         (syntax (and (equal? obj const) fender template))))))
 
 (defsyt cost
-  ( [_ g]
+  ( [_ g echo?]
     (let ([t 0] [res nil])
-      (echol (fmt ": ~s" 'g))
+      (if echo? (echol (fmt ": ~s" 'g))) ;
       ;(set! t (clock))
       (set! t (get-ms))
       (set! res g)
       ;(set! t (inexa(/ (-(clock)t) CLOCKS_PER_SEC)))
       (set! t (- (get-ms) t))
       ;(echol ": elapse =" t "s")
-      (echol ": elapse =" t "ms")
-      (li res t)
-) ) )
+      (if echo? (echol ": elapse =" t "ms")) ;
+      (list res t)
+  ) )
+  ( [_ g]
+    (cost g T)
+) )
 (defsyt elapse ;just elapse but result
   ( [_ g]
     (let ([t 0])
@@ -2106,6 +2111,9 @@ to-test:
   (list (head xs m) (tail xs m))
 )
 
+(def cdr-nilp [lam (x) (nilp (cdr x))]) ;fz
+(def car-nilp [lam (x) (nilp (car x))])
+
 ;(key->val '([a 1][b 2][c]) 'c)
 (def/va (key->val xz x [= eql] [f-case id] [defa? F] [defa nil]) ;
   (def (_ xz)
@@ -2131,8 +2139,6 @@ to-test:
   (_ xz)
 )
 
-(def cdr-nilp [lam (x) (nilp (cdr x))])
-(def car-nilp [lam (x) (nilp (car x))])
 
 (def [lisp x] ;@ how about list? and your old code
   (and (pair? x)
@@ -3723,6 +3729,23 @@ to-test:
 
 ; API
 
+(def/va (sleep% [sec 0] [ms 0]) (#%sleep (make-time 'time-duration [fixnum (* ms (pow 10 6))] [fixnum sec])))
+
+(def/va (sleep-ms [ms 0])
+  (letn
+    ( [ts  (fill-lhs (int->list/scale (int ms) 1000) 0 2)] ;
+      [sec (car  ts)]
+      [ms  (cadr ts)] )
+    (sleep% sec ms)
+) )
+(def/va (sleep-sec [sec 0])
+  (letn
+    ( [ts  (fill-lhs (int->list/scale (int (* sec 1000)) 1000) 0 2)] ;
+      [sec (car  ts)]
+      [ms  (cadr ts)] )
+    (sleep% sec ms)
+) )
+
 ;(_ '([(1 2)(3 4)][(5 6)(7 8)])) ;-> '(r[r(1 2)r(3 4)]r[r(5 6)r(7 8)])
 (def (flip xs)
   (map deep-rev xs)
@@ -3736,7 +3759,7 @@ to-test:
 
 (def/va (get-https-ret url [file (rand-filename 8 ".txt")])
   (let
-    ( [ret nil]
+    ( [ret nil] ;wget -q -O - {url}
       [cmd (str "wget -q --no-check-certificate -O " file " \"" url "\"")] ) ;no chk for ssl
     (sys cmd)
     (setq ret (read-file-0 file)) ;
@@ -5208,17 +5231,19 @@ to-test:
 
 (alias yc y-comb)
 
-(def (y-comb self)
-  ([lam (f) (f f)]
-    (lam (~)
-      (self
-        (lam arg
-          (redu [~ ~] arg) ;
-) ) ) ) )
+(define y-comb ;+letrec
+  (fn (self)
+    ( [fn (f) (f f)]
+      (fn (~)
+        (self
+          (fn arg
+            (apply [~ ~] arg) ;
+) ) ) ) ) )
+;[(yc y-len) '(1 2 3)]
 
-(def (y-len ~)
-  (lam (xs)
-    (if [nilp xs] 0
+(define (y-len ~)
+  (fn (xs)
+    (if [null? xs] 0
       (1+ [~ (cdr xs)])
 ) ) )
 
@@ -5855,7 +5880,7 @@ to-test:
 
 ;---
 
-(def (sleep ms) (c-sleep [fixnum ms]))
+(def (sleep ms) (c-sleep [fixnum ms])) ;sleep
 
 (def/va (beep [freq 456] [dura 188]) (c-beep freq dura))
 
