@@ -12,6 +12,7 @@
         
   - Update notes:
     - 1.99
+      - ZV add: retry
       - Zv add: (setf! xs func car 3)
       - ZU add: sleep-sec 1.01, sleep-ms 1010
       - ZT fix: via relocating cdr-nilp
@@ -1505,7 +1506,7 @@ to-test:
 (alias callnest  call-nest)
 (alias callsnest call-snest)
 
-(defsyt setf! ;
+(defsyt setf! ;no much use
   ((_ x) (set! x (void)))
   ((_ x a) (set! x a)) ;setq
   ([_ x cxr v]
@@ -3756,6 +3757,17 @@ to-test:
       [ms  (cadr ts)] )
     (sleep% sec ms)
 ) )
+
+(def/va (retry f [times 1] [ms 1])
+  (def (~ times)
+    (if [<= times 0] F
+      (if [f] T
+        (bgn
+          (sleep-ms ms)
+          [~ (1- times)]
+  ) ) ) )
+  [~ times]
+)
 
 ;(_ '([(1 2)(3 4)][(5 6)(7 8)])) ;-> '(r[r(1 2)r(3 4)]r[r(5 6)r(7 8)])
 (def (flip xs)
