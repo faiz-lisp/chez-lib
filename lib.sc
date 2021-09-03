@@ -12,6 +12,7 @@
         
   - Update notes:
     - 1.99
+      - Zv add: (setf! xs func car 3)
       - ZU add: sleep-sec 1.01, sleep-ms 1010
       - ZT fix: via relocating cdr-nilp
       - Zt add: get-time ~> '(9 0 0)
@@ -1501,10 +1502,20 @@ to-test:
   ; ([x] nil)
 ; )
 
-
-
 (alias callnest  call-nest)
 (alias callsnest call-snest)
+
+(defsyt setf! ;
+  ((_ x) (set! x (void)))
+  ((_ x a) (set! x a)) ;setq
+  ([_ x cxr v]
+    (let ([setter (case 'cxr ('cdr set-cdr!) (else set-car!))]) ;
+      (setter x v)
+  ) )
+  ([_ x cxr cxrs ... v]
+    (setf! (cxr x) cxrs ... v)
+) )
+;(setq xs '(1 (2))) (setf! xs cdr car 3)
 
 ; system
 
