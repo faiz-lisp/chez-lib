@@ -5,13 +5,14 @@
 #|
 == Chez-lib.sc (mainly for Windows NT) - written by Faiz
    ________  __                            __   __  _
-  /    ___ \|  |__   ____ _______         |  | |__|| |__  
-  /    \  \/|  |  \_/ __ \\__   /   _____ |  | |  || __ \ 
+  /    ___ \|  |__   ____ _______         |  | |__|| |__
+  /    \  \/|  |  \_/ __ \\__   /   _____ |  | |  || __ \
   \     \___|  |\  |  ___/  /  /_  /____/ |  |_|  || \_| \
    \_______/\__||__|\____/ /_____\        |____/__|\_____/
-        
+
   - Update notes:
     - 1.99
+      - Zw add: (id/f cadr 1 2 3) ;~> 2
       - ZV add: retry
       - Zv add: (setf! xs func car 3)
       - ZU add: sleep-sec 1.01, sleep-ms 1010
@@ -103,14 +104,14 @@
     - %B big / cost more memory space
     - %win for Windows
     - ~ just faster
-    - * multi-function (or optimized)
+    - * multi-functional (or optimized)
     - ! (forced or) with side-effect
 
   - prefixes:
     - sy/ syt/ for syntax
     - ~ returns a reversed result
 
-  - /: means with or namespace
+  - /: means with something or in a namespace
 
   - vars:
     - ~var: temp variety
@@ -294,7 +295,7 @@
 
 |#
 
-(import (chezscheme)) ;need this when use --program
+(import (chezscheme)) ;you need this when used --program
 ;(collect-request-handler void) ;~ for some optimizing
 
 ;(load (str *lib-path* "/match.ss"))
@@ -308,6 +309,7 @@
 (ali   lam      lambda)
 (ali   letn     let*)
 (ali   bgn      begin)
+(ali   fn       lambda)
 
 (alias quo      quote)
 (alias def-syt  define-syntax)
@@ -315,7 +317,6 @@
 (alias syt-case syntax-case)
 (alias case-lam case-lambda)
 (alias els      else)
-(ali   fn       lambda)
 (alias progn    begin)
 (alias vec      vector)
 (alias vecp     vector?)
@@ -323,6 +324,7 @@
 (alias vec->lis vector->list)
 (alias lis->vec list->vector)
 (alias vec-len  vector-length)
+(alias id id-car)
 
 (ali exist-file? file-exists?)
 
@@ -475,7 +477,6 @@
     ([_ (k e more ...) (bd ...)]
     #'(if% (more ...) (bd ... [k e])) )
 ) )
-
 (def-syt (if~ stx)
   (syt-case stx ()
     ([_ bd ...]
@@ -588,13 +589,12 @@
 ) ) )
 
 
-
 (defsyt cacc ;
   ([_ (k) bd ...]
     (call/cc [lam (k) bd ...])
 ) )
 (defm (let/cc k bd ...) ;
-  (call/cc (lam (k) bd ...))
+    (call/cc [lam (k) bd ...])
 )
 
 ;
@@ -674,9 +674,9 @@
   asd
   ((a 1) (s s) (d 3) (f f))
   ((a 1) (s s) (d 3) (f f))
-  (a d) 
+  (a d)
   ()
-  (a d) 
+  (a d)
   (((a s d f) (li a s d f)))
   ()
   () )
@@ -703,8 +703,8 @@ to-test:
     ([_           g ori-pairs (               ) (A0 B0 ...) (   ori-tmp-cnt ...) []                   (ret ...)                         [tmp ...] (rest ...)] ;tmp
       #'(def/va%4 g ori-pairs ori-pairs         (   B0 ...) (A0 ori-tmp-cnt ...) (A0 ori-tmp-cnt ...) (ret ... ([tmp ...](g rest ...))) [] [])
     )
-    ([_           g ori-pairs para-pairs        [         ] ori-tmp-cnt       []       (ret ...) [tmp ...] (rest ...)]
-      #'(def     g (case-lam ret ...  ([tmp ...](g rest ...))  ))
+    ([_           g ori-pairs para-pairs        [         ] ori-tmp-cnt       [] (ret ...) [  tmp ...] (  rest ...)]
+      #'(def      g (case-lam ret ... ([tmp ...] (g rest ...)) ) )
 ) ) )
 ;_ g, Ori-pairs para-pairs; main-cnt=(A D), Ori-tmp-cnt tmp-cnt=(); Ret, lamPara=[] bodyPara=[]
 
@@ -713,7 +713,7 @@ to-test:
   asd
   ((a 1) s (d 3) f)
   ((a 1) (s s) (d 3) (f f))
-  [a d] 
+  [a d]
   (li a s d f))
 |#
 (defsyt def/va%3
@@ -731,8 +731,8 @@ to-test:
 
 #|
 (def/va%2 asd ((a 1) s (d 3) f) ((a 1) s (d 3) f)
-  () ()
-  (li a s d f))
+  () []
+  (li a s d f) )
 |#
 (def-syt (def/va%2 stx)
   (syt-case stx ()
@@ -752,10 +752,9 @@ to-test:
   ( [_ (f x ...) body ...]
     (def/va%2 f (x ...) (x ...) () [] body ...) ;
 ) )
-
 (defsyt defn/va
-  ( [_ g (p ...) body ...]
-    (def/va%2 g (p ...) (p ...) () [] body ...)
+  ( [_ f (x ...) body ...]
+    (def/va%2 f (x ...) (x ...) () [] body ...)
 ) )
 (alias def/defa def/va)
 ;test: (def/va (sublis xs [s 0] n) [head(tail xs s)n]) (sublis '(1 2 3) 2)
@@ -882,10 +881,9 @@ to-test:
             (break) ;
 ) ) ) ) ) )
 
-(defm (sy-redu g (x ...))
+(defm (sy-redu g (x ...)) ;
   (g x ...)
 )
-;
 
 ;sy-
 
@@ -1390,13 +1388,13 @@ to-test:
       (set! res g)
       ;(set! t (inexa(/ (-(clock)t) CLOCKS_PER_SEC)))
       (set! t (- (get-ms) t))
-      ;(echol ": elapse =" t "s")
       (if echo? (echol ": elapse =" t "ms")) ;
       (list res t)
   ) )
   ( [_ g]
     (cost g T)
 ) )
+
 (defsyt elapse ;just elapse but result
   ( [_ g]
     (let ([t 0])
@@ -1409,7 +1407,6 @@ to-test:
       (echol ": elapse =" t "ms")
       t
 ) ) )
-
 
 ;Code written by Oleg Kiselyov
 
@@ -1453,6 +1450,7 @@ to-test:
       (let ([fk (lam() (pmatch-aux name v cs ...))])
         (ppat v pat (bgn e0 e ...) (fk))
 ) ) ) )
+
 (def-syt pmatch ;~= aux ;p for pat
   (syt-ruls (else guard)    ;guard for ?
     ([_ v      (e ...) ...]
@@ -1496,8 +1494,9 @@ to-test:
               (In ...) Ret
       ) ) ) )
 ) ) )
-(ali *tab/jp* *tab/jp/key-a-A*)
+
 (alias clean restore)
+(ali *tab/jp* *tab/jp/key-a-A*)
 
 ; (defsyt lam-snest
   ; ([x] nil)
@@ -1609,7 +1608,7 @@ to-test:
 
 ;
 
-(def *will-ret* #t)
+(def *will-ret*   #t)
 (def *will-disp*  #t)
 
 ; doc 1/2 flag
@@ -1623,8 +1622,12 @@ to-test:
 
 ;===
 
-(def (id x . xs) x)
 ;(def (id x) x)
+;(def (id x . xs) x)
+;(id-cadr 1 2 3)
+;(id/f cadr 1 2 3) ;~> 2
+(def (id-car x . xs) x)
+(def (id/f f . xs) (f xs)) ;id-with-getter
 
 (def/va (doc-add kv [db *htab/fn-lam*])
   (add-to-htab! db kv)
@@ -1737,7 +1740,6 @@ to-test:
   ) ) ) )
   (_ paras 0)
 )
-
 (def (list-elements xs) ;(_ '(a (b) (c 1) d)) ~> '((a) (b) (c 1) (d))
   (def (_ xs)
     (if (nilp xs) nil
@@ -1758,7 +1760,6 @@ to-test:
   ) ) ) )
   (_ xs)
 )
-
 ; (def (defa->vals/aux paras vals nths-defa-part nths-not-defa nths-defa-rest) ;
   ; (def (_ paras vals n-head n-ndefa n-tail ret)
     ; (if (nilp paras)  ret ;
@@ -1921,6 +1922,7 @@ to-test:
         ) ) ) )
         [_ (rev chs) '()]
 ) ) ) )
+
 (def (string->path-file s)
   (string-divide-rhs-1 s "/")
 )
@@ -2002,7 +2004,7 @@ to-test:
 ; )
 
 
-(def (cls) [for(42)(newln)])
+(def (cls) [for (42) (newln)])
 
 ;
 
@@ -2227,7 +2229,7 @@ to-test:
 )
 
 (def [do-for xs f-xs f-xs-ret]
-  (f-xs-ret xs [f-xs xs]) ;
+  (f-xs-ret xs [f-xs xs]) ;g f1 f2
 )
 
 (def (fill-rhs-nx xs n x)
@@ -3329,7 +3331,7 @@ to-test:
 ) ) )
 
 (def range/total ;total n s f p e
-  (case-lam  
+  (case-lam
     ( [total]
       (range/total total 0 + 1 total) )
     ( [total n]
@@ -3911,7 +3913,7 @@ to-test:
   (redu~ xor2% [map not xs]) ;not issue when: (xor x)
 )
 
-(def/va (avg% ns [n0 0] [f +] [g /]) ;* pow/ 4 2 
+(def/va (avg% ns [n0 0] [f +] [g /]) ;* pow/ 4 2
   (def (~ ns ret n)
     (if [nilp ns]
       (g ret n) ;
@@ -4747,7 +4749,7 @@ to-test:
 
 (def (round% x) ;
   (let ([fl (floor x)])
-    (if [>= (- x fl) 0.5]
+    (if [>= (- x fl) 0.5] ;
       (1+ fl)
       fl
 ) ) )
@@ -5572,7 +5574,7 @@ to-test:
 )
 
 (def randnums
-  (case-lam  
+  (case-lam
     ([n s e] ;e-s+1 + s ;range?
       (let ([m (- (1+ e) s)])
         (def (_ ret n)
@@ -6091,7 +6093,7 @@ to-test:
     (nilp e) *f
     (atom e) (if(eql e m)*t *f)
     (if~
-      [_(car e)m] *t		
+      [_(car e)m] *t
       [_(cdr e)m] *t
       else   *f
 ) ) )
