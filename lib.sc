@@ -12,11 +12,11 @@
 
   - Update notes:
     - 1.99
+      - ZW fix: (str (void)) ~> ""
       - Zw add: (id/f cadr 1 2 3) ;~> 2
       - ZV add: retry
       - Zv add: (setf! xs func car 3)
       - ZU add: sleep-sec 1.01, sleep-ms 1010
-      - ZT fix: via relocating cdr-nilp
       - Zt add: get-time ~> '(9 0 0)
       - ZS upd: divide-before
       - Zs Add: rand-filename
@@ -3155,6 +3155,7 @@ to-test:
     ((pair?   x) (lis->str(pair->list% x)))
     ;((ffi?   x) (sym->str           'x)) ;name?
     ((fn?     x)  "") ;ty?
+    ((void?   x)  "")
     ((atom?   x) (sym->str           'x)) ;
     (els          "")
 ) )
@@ -4967,7 +4968,7 @@ to-test:
   (sys (str "md " [path/gnu->win path] " 2>nul")) ;hide error path/gnu->win
 )
 
-(def (make-file!%/win file)
+(def (make-file!%/win file) ;path?
   (sys (str "type nul>" file))
 )
 
