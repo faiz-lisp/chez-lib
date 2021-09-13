@@ -12,6 +12,7 @@
 
   - Update notes:
     - 1.99
+      - Zx add: chg-nth% xs iths [value nil] [base 1]
       - ZW fix: (str (void)) ~> ""
       - Zw add: (id/f cadr 1 2 3) ;~> 2
       - ZV add: retry
@@ -2680,6 +2681,24 @@ to-test:
           (cons a [~ d (1- i)])
   ) ) ) )
   (~ XS i)
+)
+
+;(setq asd '([1 (2 3)][4 5])) (chg-nth% asd '(1 2 2) 7)
+(def/va (chg-nth% XS iths [new nil] [base 1]) ;chg-nth-val [base 0] ;chg-val-by-a-ref
+  (def (~2 xs i iths)    
+    (if (nilp xs) nil ;
+      (let/ad xs
+        (if (<= i base)
+          (if [nilp iths] (cons new d)
+            (cons [~ a iths] d) )
+          (cons a [~2 d (1- i) iths])
+  ) ) ) )
+  (def (~ xs iths)
+    (if (nilp iths) xs ;
+      (let/ad iths
+        (~2 xs a d)
+  ) ) )
+  (~ XS iths)
 )
 
 (def (chg-nth2 xs n . ys) ;
