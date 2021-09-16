@@ -12,6 +12,7 @@
 
   - Update notes:
     - 1.99
+      - ZX upd: flow
       - Zx add: chg-nth% xs iths [value nil] [base 1]
       - ZW fix: (str (void)) ~> ""
       - Zw add: (id/f cadr 1 2 3) ;~> 2
@@ -145,9 +146,9 @@
 
   - todo:
     - lam/va, lam-macro
-    - (deep-action/map/apply g xs [seq]): d-remov
     - include
     - pcre->match?
+    - (deep-action/map/apply g xs [seq]): d-remov
     - end->car
     - control[include convert]: strings, files, ...
     - ~(!= 1 2 1), (> 3 2 1), (coprime? 2 15 4)
@@ -173,7 +174,7 @@
       - skip-list/max-skip-step/for-spec-type/with-logic, path
         - ?`[(4) ([(1 a) 2 3] [4 5 6])]
       - b+tree
-    - AI:
+    - AI
     - math memo combinations, eval. match
     - https usd/usdt pcre
     - def/setq-glob
@@ -188,7 +189,7 @@
       - replace
 
   - cant/hard: get-addr
-  - cant implete the same thing:
+  - cant implete:
     - apply call/cc?
 
   - seq of implements:
@@ -2520,13 +2521,24 @@ to-test:
 (def (flow . fs)
   (flow% fs) ;
 )
-(def (flow% fs) ;% ev?
-  (def (_ ret gs)
-    (if [nilp gs] ret ;
-      (_ [lam (x) ((car gs) (ret x))] ;?
-        (cdr gs)
+(def (flow% fs) ;
+  (def (~ ret fs)
+    (if [nilp fs] ret ;
+      (~
+        (lam (x) [(car fs) (ret x)]) ;
+        (cdr fs)
   ) ) )
-  (_ id fs) ;
+  (if [nilp fs] id
+    [~ (lam xs [redu (car fs) xs]) (cdr fs)] ;
+) )
+(def (flow%1 fs) ;xs->x x->x ;map
+  (def (~ ret fs)
+    (if [nilp fs] ret ;
+      (~
+        (lam (x) [(car fs) (ret x)]) ;. (x)->xs ;redu
+        (cdr fs)
+  ) ) )
+  (~ id fs) ;
 )
 
 (def/va (~do-for-pairs xs [f list])
@@ -3884,7 +3896,7 @@ to-test:
     ( [arb (arb-group [fill-lhs (str->list (int->str/system iCol 2)) #\0 16] 5 6 5)] ;arb from head/tail?
       [xz  (map (rcurry fill-rhs #\0 8) arb)] ) ;
     (map
-      [flow list->str (rcurry str->int/system 2)]
+      [flow list->str (rcurry str->int/system 2)] ;
       xz
 ) ) )
 
@@ -3952,6 +3964,10 @@ to-test:
 
 (def (.avg . xs)
   (avg% xs 0.)
+)
+
+(def (cube-avg . xs)
+  (avg% xs 1. * (lam (x y) [pow x (./ y)]))
 )
 
 (def ./
