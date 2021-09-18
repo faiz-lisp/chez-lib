@@ -12,6 +12,7 @@
 
   - Update notes:
     - 1.99
+      - ZY upd: range
       - Zy add: chg-val-by-key kvs k v [k= eql], chg-vals-by-keys kvs kvs-new [k=]
       - ZX upd: flow
       - Zx add: chg-nth% xs iths [value nil] [base 1]
@@ -3342,13 +3343,13 @@ to-test:
         ) )
         (cons s [_ (+ s p)]) ;
     ) )
-    ( [s e f p] ;n
-      (let ([g (if [>= (f p) 0] > <)]) ;*|/
+    ( [s e f p] ;n ;0 1
+      (let ([g (if (>= [f s p] s) > <)]) ;sign
         (def (_ i)
-          (if (g i e) nil
-            (cons i [_ (f i p)]) ;
+          (if (g i e) nil ;f ;range x m M ;min-max xs
+            (cons i [_ (f i p)])
         ) )
-        (cons s [_ (f s p)])
+        (cons s [_ (f s p)]) ;init
     ) )
     ( [total s f p e] ;
       (let ([g (if [>= (f s p) s] > <)]) ;
