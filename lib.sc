@@ -12,6 +12,7 @@
 
   - Update notes:
     - 1.99
+      - Zy add: chg-val-by-key kvs k v [k= eql], chg-vals-by-keys kvs kvs-new [k=]
       - ZX upd: flow
       - Zx add: chg-nth% xs iths [value nil] [base 1]
       - ZW fix: (str (void)) ~> ""
@@ -2155,7 +2156,6 @@ to-test:
   (_ xz)
 )
 
-
 (def [lisp x] ;@ how about list? and your old code
   (and (pair? x)
     [cdr-nilp [last-pair x]] ;5x ;last-pair@, dont use list?/lisp
@@ -2198,6 +2198,34 @@ to-test:
     ) ) ) ) ) )
     [rev (_ nil KVs Ks)]
 ) )
+
+
+;(chg-val-by-key (animal) 'name "dog")
+(def/va (chg-val-by-key kvs k v [= eql]) ;case?
+  (def (_ ret xz)
+    (if [nilp xz] kvs ;f
+      (letn
+        ( [kv (car xz)] [yz (cdr xz)]
+          [a  (car kv)] )
+        (if [= a k]
+          (cons (list k v)
+            (append [rev ret] yz) ) ;t
+          [_ (cons kv ret) yz]
+  ) ) ) )
+  (_ nil kvs)
+)
+
+;(chg-vals-by-keys (animal) '([name "dog"][action bark]))
+(def/va (chg-vals-by-keys kvs kvs-new [= eql]) ;
+  (def (_ xz yz)
+    (if [nilp yz] xz
+      (letn
+        ( [a (car yz)] [d (cdr yz)]
+          [k (car  a)] [v (cadr a)] )
+        [_ (chg-val-by-key xz k v =) d] ;
+  ) ) )
+  [_ kvs kvs-new]
+)
 
 (def/va (rotate! xs [n 1]) ;ret?
   (for [n] (car->end! xs)) ;[rev? F] ;end->car!
