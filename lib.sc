@@ -1,5 +1,5 @@
 
-(define (version) "Chez-lib v1.99") ;
+(define (version) "chez-lib v1.99") ;
 (define (git-url) "https://gitxx.com/faiz-xxxx/chez-lib.git")
 
 #|
@@ -12,14 +12,13 @@
 
   - Update notes:
     - 1.99
+      - Zz add: (.% 1.27 0.02) ;->0.01
       - ZY upd: range
       - Zy add: chg-val-by-key kvs k v [k= eql], chg-vals-by-keys kvs kvs-new [k=]
       - ZX upd: flow
       - Zx add: chg-nth% xs iths [value nil] [base 1]
-      - ZW fix: (str (void)) ~> ""
       - Zw add: (id/f cadr 1 2 3) ;~> 2
-      - ZV add: retry
-      - Zv add: (setf! xs func car 3)
+      - Zv add: (setf! xs func car 3) ;
       - ZU add: sleep-sec 1.01, sleep-ms 1010
       - Zt add: get-time ~> '(9 0 0)
       - ZS upd: divide-before
@@ -2157,9 +2156,9 @@ to-test:
   (_ xz)
 )
 
-(def [lisp x] ;@ how about list? and your old code
+(def [lisp x]                   ;@ how about list? and your old code
   (and (pair? x)
-    [cdr-nilp [last-pair x]] ;5x ;last-pair@, dont use list?/lisp
+    (null? (cdr [last-pair x])) ;5x ;last-pair@, dont use list?/lisp
 ) )
 
 (def (list/sep xs sep)
@@ -3973,6 +3972,12 @@ to-test:
   )
   (redu~ xor2% [map not xs]) ;not issue when: (xor x)
 )
+
+;(.% 123.1234 10.0) ;->3.1234
+(def/va (.% num [mod 10.0])
+  (let ([~quot (./ num mod)]) ;
+    (* mod (- ~quot (floor ~quot)))
+) )
 
 (def/va (avg% ns [n0 0] [f +] [g /]) ;* pow/ 4 2
   (def (~ ns ret n)
