@@ -12,6 +12,7 @@
 
   - Update notes:
     - 1.99
+      - ZZ add: (map1/nths (lam (x) (list x)) '(1 2 213 123) '(2 4) F) ;-> '(1 [2] 213 [123])
       - Zz add: (.% 1.27 0.02) ;->0.01
       - ZY upd: range
       - Zy add: chg-val-by-key kvs k v [k= eql], chg-vals-by-keys kvs kvs-new [k=]
@@ -2112,6 +2113,22 @@ to-test:
   (~ nil xs)
 )
 
+;(map1/nths (lam (x) (list x)) '(1 2 213 123) '(2 4) F) ;-> '(1 [2] 213 [123])
+(def/va (map1/nths f xs nths [sort-nths? T])
+  (let ([nths (if sort-nths? (qsort nths) nths)])
+    (def (~ ret xs i n nths)
+      (if [nilp xs] (rev ret)
+        (let/ad xs
+          (if [eq n i]
+            (if [nilp nths]
+              (append/rev-head (cons (f a) ret) d) ;
+              [~ (cons (f a) ret) d (1+ i) (car nths) (cdr nths)] ) ;
+            [~ (cons a ret) d (1+ i) n nths]
+    ) ) ) )
+    (if [nilp nths] xs
+      (~ nil xs 1 (car nths) (cdr nths)) ;
+) ) )
+
 ;(head-tail (range 10) 6) ;-> '([0 1 2 3 4 5] [6 7 8 9])
 (def (head-tail% xs m)
   (def (_ tmp xs m) ;xs tmp m
@@ -3976,7 +3993,7 @@ to-test:
 ;(.% 123.1234 10.0) ;->3.1234
 (def/va (.% num [mod 10.0])
   (let ([~quot (./ num mod)]) ;
-    (* mod (- ~quot (floor ~quot)))
+    (* mod (- ~quot (floor ~quot))) ;
 ) )
 
 (def/va (avg% ns [n0 0] [f +] [g /]) ;* pow/ 4 2
