@@ -12,11 +12,11 @@
 
   - Update notes:
     - 2.00
-      - add: (float-len 1.23213) -> 5
+      - a add: (filter-nths (curry eq 5) '(1 123  5 654 6 5 2)) ;-> nths
+      - ~ add: (float-len 1.23213) -> 5
     - 1.99
       - ZZ add: (map1/nths (lam (x) (list x)) '(1 2 213 123) '(2 4) F) ;-> '(1 [2] 213 [123])
       - Zz add: (.% 1.27 0.02) ;->0.01
-      - ZY upd: range
       - Zy add: chg-val-by-key kvs k v [k= eql], chg-vals-by-keys kvs kvs-new [k=]
       - ZX upd: flow
       - Zx add: chg-nth% xs iths [value nil] [base 1]
@@ -5932,6 +5932,18 @@ to-test:
         [_ (cons (car xs) ret) (cdr xs) (1+ j)]
   ) ) )
   (_ nil xs 0)
+)
+
+;(filter-nths (curry eq 5) '(1 123  5 654 6 5 2)) ;-> nths
+(def (filter-nths g xs)
+  (def (~ nths i xs)
+    (if [nilp xs] nths
+      (let/ad xs
+        (if [g a]
+          [~ (cons i nths) (1+ i) d]
+          [~ nths (1+ i) d]
+  ) ) ) )
+  (~ nil 1 xs) ;
 )
 
 (define (split n xs)
