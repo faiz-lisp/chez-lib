@@ -1,5 +1,5 @@
 
-(define (version) "chez-lib v1.99") ;
+(define (version) "chez-lib v2.00") ;
 (define (git-url) "https://gitxx.com/faiz-xxxx/chez-lib.git")
 
 #|
@@ -11,6 +11,8 @@
    \_______/\__||__|\____/ /_____\        |____/__|\_____/
 
   - Update notes:
+    - 2.00
+      - add: (float-len 1.23213) -> 5
     - 1.99
       - ZZ add: (map1/nths (lam (x) (list x)) '(1 2 213 123) '(2 4) F) ;-> '(1 [2] 213 [123])
       - Zz add: (.% 1.27 0.02) ;->0.01
@@ -3982,6 +3984,14 @@ to-test:
 (def [len<1  x] (<1  (len x)))
 (def [len>=1 x] (>=1 (len x)))
 (def [len<=1 x] (<=1 (len x)))
+
+;(float-len 123.123123) -> 6
+(def (float-len flo)
+  (let ([xs (str-divide (str flo) ".")])
+    (if [>= (len xs) 2]
+      (len* (cadr xs))
+      0
+) ) )
 
 (def (xor . xs)
   (def (xor2% a b) ;logical ;(bitwise-xor 1 1 2 2 2 2 3 3 3)
