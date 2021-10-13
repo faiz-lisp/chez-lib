@@ -12,6 +12,7 @@
 
   - Update notes:
     - 2.00
+      - A add: (key->kv kvs key [= eql])
       - a add: (filter-nths (curry eq 5) '(1 123  5 654 6 5 2)) ;-> nths
       - ~ add: (float-len 1.23213) -> 5
     - 1.99
@@ -33,7 +34,6 @@
       - ZP add: int<->list/scale
       - Zp upd: list/nth xs [n0 1]
       - Zn upd: int->str/system
-      - ZM add: fac2
       - Zm add: -% cmp% close-to%
       - ZL add: str-count
       - Zl upd: .avg
@@ -56,7 +56,6 @@
       - y Fix : choose: once?
       - W add : rand-seq
       - v add : ref%, ref*, refs*
-      - U upd : range
       - T add : chg-nth, chg-ref-val ;
       - S upd : refs nths xths pts->vals
       - r upd : demo maze
@@ -70,7 +69,6 @@
       - G upd : divide
       - F add : str-trim-all
       - D upd : case (compose); fix : gotcha;
-      - C add : rlist
       - a add : (collect 10 (do-sth))
       - ~ add : int<->str/system, digit<->char, global vars
     - 1.98
@@ -2149,6 +2147,18 @@ to-test:
 
 (def cdr-nilp [lam (x) (nilp (cdr x))]) ;fz
 (def car-nilp [lam (x) (nilp (car x))])
+
+(def/va (key->kv xz x [= eql]  [f-case id] [defa? F] [defa nil]) ;
+  (def (_ xz)
+    (if (nilp xz)
+      (if defa? defa x)
+      (let ([xs (car xz)] [yz (cdr xz)])
+        (if [= (f-case x) (car xs)] ;src-case
+          [if (cdr-nilp xs) nil xs] ;
+          [_ yz]
+  ) ) ) )
+  (_ xz)
+)
 
 ;(key->val '([a 1][b 2][c]) 'c)
 (def/va (key->val xz x [= eql] [f-case id] [defa? F] [defa nil]) ;
@@ -4429,12 +4439,8 @@ to-test:
     (doer
       (lam (x y)
         ;(+ [* (+ (sin x) (sin y)) 2] 5) ;1~9
-<<<<<<< HEAD
         ;[+ (sin (* [+ (sin x) 2] (1+ y))) 2] ;*4+5
         (+ 5. [* 4. (sin (* (sin x) (fx1+ y)))]) ;1~9 ;*3+4?
-=======
-        [+ (sin (* [+ (sin x) 2] (1+ y))) 2]
->>>>>>> 0409ea8f586b7ee830814b26ad14ae84aae802fe
   ) ) )
   (let ([factor (pow 10. level)]) ;8~13 front-part
     ([flow (rcurry * factor) round int] ;? int *
