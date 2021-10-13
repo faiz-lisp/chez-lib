@@ -12,6 +12,7 @@
 
   - Update notes:
     - 2.00
+      - b add: dot: (keys->val kvs . keys)
       - A add: (key->kv kvs key [= eql])
       - a add: (filter-nths (curry eq 5) '(1 123  5 654 6 5 2)) ;-> nths
       - ~ add: (float-len 1.23213) -> 5
@@ -2172,6 +2173,7 @@ to-test:
   ) ) ) )
   (_ xz)
 )
+
 ;(val->key '([a 1][b 2][c]) '3)
 (def/va (val->key xz x [= eql] [f-case id]) ;
   (def (_ xz)
@@ -2183,6 +2185,17 @@ to-test:
             [_ yz]
   ) ) ) ) )
   (_ xz)
+)
+
+(def (keys->val kvs . ks) ;keys->val / dot
+  (def (keys->val% kvs ks)
+    (if [nilp ks] kvs ;
+      (let/ad ks          
+        (if (consp kvs)
+          [keys->val% (key->val kvs a) d] ;
+          nil
+  ) ) ) )
+  (keys->val% kvs ks) ;
 )
 
 (def [lisp x]                   ;@ how about list? and your old code
