@@ -12,6 +12,8 @@
 
   - Update notes:
     - 2.00
+      - c add: (time->sec (get-time))
+      - B chg: eq/eql for num
       - b add: dot: (keys->val kvs . keys)
       - A add: (key->kv kvs key [= eql])
       - a add: (filter-nths (curry eq 5) '(1 123  5 654 6 5 2)) ;-> nths
@@ -128,6 +130,7 @@
     - std, core, ex, idea, main
 
   - Which ops are slow?: (sequence: fast->slow)
+    ~ guard match
     - last-pair last list?
     - length
     - append->conz->rpush ... slowest
@@ -1524,12 +1527,27 @@ to-test:
 
 ; system
 
+; time
+
 (def (get-time)
   (letn
     ( [date (current-date)]
       [hr (date-hour date)] [m (date-minute date)] [sec (date-second date)] )
     (list hr m sec)
 ) )
+
+;(time->sec (get-time))
+(def/va (time->sec time [factors '(60 60 1)])
+  (def (~ ret xs facs)
+    (if [nilp xs] ret
+      (let/ad xs
+        (if [nilp facs]
+          (foldl + ret xs)
+          (let ([af (car facs)] [df (cdr facs)])
+            [~ (* [+ a ret] af) d df]
+  ) ) ) ) )
+  (~ 0 time factors)
+)
 
 ;ffi
 
@@ -2149,13 +2167,13 @@ to-test:
 (def cdr-nilp [lam (x) (nilp (cdr x))]) ;fz
 (def car-nilp [lam (x) (nilp (car x))])
 
-(def/va (key->kv xz x [= eql]  [f-case id] [defa? F] [defa nil]) ;
+(def/va (key->kv xz x [= eql] [defa? F] [defa nil]) ;
   (def (_ xz)
     (if (nilp xz)
-      (if defa? defa x)
-      (let ([xs (car xz)] [yz (cdr xz)])
-        (if [= (f-case x) (car xs)] ;src-case
-          [if (cdr-nilp xs) nil xs] ;
+      [if defa? defa x]
+      (let ([kv (car xz)] [yz (cdr xz)])
+        (if [= x (car kv)] ;
+          kv ;
           [_ yz]
   ) ) ) )
   (_ xz)
@@ -2198,8 +2216,8 @@ to-test:
   (keys->val% kvs ks) ;
 )
 
-(def [lisp x]                   ;@ how about list? and your old code
-  (and (pair? x)
+(def (lisp x)                   ;@ how about list? and your old code
+  (and [pair? x]
     (null? (cdr [last-pair x])) ;5x ;last-pair@, dont use list?/lisp
 ) )
 
@@ -4517,7 +4535,7 @@ to-test:
 )
 
 (def (remov-1 x xs)
-  (let ([g (eq/eql x)]) ;
+  (let ([g (eq/eql x)]) ;0.0?
     (def (_ xs)
       (if (nilp xs) nil
         (let ([a(car xs)] [d(cdr xs)])
@@ -5855,14 +5873,15 @@ to-test:
             ; (apply fn args)
 ; ) ) ) ) ) )
 
-(def (memorize-fx proc) ;memorize-fx
-  (let ([cache '()])
+(def (memorize-fx proc) ;memorizify
+  (let
+    ([cache nil])
     (lam (x) ;
       (cond
-        [(assq x cache) => cdr] ;(call cdr resl)
+        [(assq x cache) => cdr] ;(call cdr resl) ;assq ~= key->kv-pair
         (else
           (let ([ans (proc x)]) ;
-            [set! cache (cons (cons x ans) cache)] ;
+            [set! cache (cons (cons x ans) cache)] ;just para and answer in cache for this fx
             ans
 ) ) ) ) ) )
 
@@ -6050,9 +6069,13 @@ to-test:
     ;(list sec nano)
 ) )
 
-(def (eq/eql x)
-  (if (str/pair/vec? x) eql eq)
-)
+(def (eq/eql x) ;
+  (if (str/pair/vec? x)
+    eql
+    (if (num? x)
+      =
+      eq
+) ) )
 
 ;(def (mem?% x xs) (bool (mem? x xs)))
 
