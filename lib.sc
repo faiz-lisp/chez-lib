@@ -12,6 +12,7 @@
 
   - Update notes:
     - 2.00
+      - C add: rmap
       - c add: (time->sec (get-time))
       - B chg: eq/eql for num
       - b add: dot: (keys->val kvs . keys)
@@ -2121,6 +2122,11 @@ to-test:
     ; (set-cdr! (last-pair ys) (cons z nil)) ;
     ; ys )
   (conz xs z) ;a bit faster than above
+)
+
+;(rmap - '(1 2) '(3 4))
+(def (rmap f . xz) ;map% f (rev xz)
+  [redu map (cons f (rev xz))] ;1.6X@ than map
 )
 
 (def (~map1 g xs) ;~
