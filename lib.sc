@@ -12,6 +12,7 @@
 
   - Update notes:
     - 2.00
+      - d upd: max-cnt-of-same
       - C add: rmap
       - c add: (time->sec (get-time))
       - B chg: eq/eql for num
@@ -4501,8 +4502,13 @@ to-test:
 )
 
 (def/va (max-cnt-of-same xs [lt <])
-  (nth [qsort (compress [qsort xs lt]) (lam (x y) [> (nth x 2) (nth y 2)])] 1 2)
-)
+  (if [nilp xs] 0
+    (nth
+      [qsort
+        (compress [qsort xs lt])
+        (lam (x y) [> (nth x 2) (nth y 2)]) ] ;
+      1 2
+) ) )
 
 ;math end
 
