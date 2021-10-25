@@ -12,6 +12,7 @@
 
   - Update notes:
     - 2.00
+      - D add: remov-xths%
       - d upd: max-cnt-of-same
       - C add: rmap
       - c add: (time->sec (get-time))
@@ -125,6 +126,7 @@
   - vars:
     - ~var: temp variety
     - *global-var*
+    - %glob-tmp-var%
 
   - editions/parts:
     - idea; ideal; refined; stable;
@@ -1671,16 +1673,17 @@ to-test:
   (_ xs [remov-nil yz]) ;when to ys/cons/append!/set-cdr!
 )
 
-(def (curry g . args) ;curry(0~)2 ;cant /doc here?
+(def (curry g . args) ;
   (lam xs
     (redu g ;
-      (append~ args xs)
+      (append~ args xs) ;
 ) ) )
 (def (rcurry g . args)
   (lam xs
     (redu g
       (append~ xs args)
 ) ) )
+
 (def (curry~ g . args)
   (lam xs
     (redu~ g ;
@@ -2295,7 +2298,8 @@ to-test:
 )
 
 (def/va (rotate! xs [n 1]) ;ret?
-  (for [n] (car->end! xs)) ;[rev? F] ;end->car!
+  (for [n] (car->end! xs)) ;@? [rev? F] ;end->car!
+  xs ;?
 )
 
 ; [duplicates '(123 321 123 321 321 1 2 3)] -> '(123 321 321 ...) -> remov-same
@@ -4594,7 +4598,18 @@ to-test:
     ([x xs] (remov x xs -1))
 ) )
 
-(defn remov-nth% (xs . nths)
+(def/va (remov-xths% xs xths [base 0]) ;% xths [base 0]
+  (def (_ xs xths n) ;i
+    (if (nilp xs) nil
+      (if (nilp xths) xs
+        (if [eq (car xths) n]
+          [_ (cdr xs) (cdr xths) (1+ n)]
+          (cons (car xs) [_ (cdr xs) xths (1+ n)])
+  ) ) ) )
+  (_ xs xths base) ;
+)
+
+(def (remov-nth% xs . nths)
   (def (_ xs nths n)
     (if (nilp xs) nil
       (if (nilp nths) xs
@@ -5669,12 +5684,12 @@ to-test:
 
 ;sort
 
-(def (car->end! xs) ;end->car!
-  (if (cdr-nilp xs) xs
+(def (car->end! xs) ;end->car! 1
+  (if (cdr-nilp xs) xs ;
     (bgn
       (set-cdr! (last-pair xs) (list (car xs))) ;
       (set-car! xs (cadr xs)) ;
-      (set-cdr! xs (cddr xs))
+      (set-cdr! xs (cddr xs)) ;
       xs
 ) ) )
 
