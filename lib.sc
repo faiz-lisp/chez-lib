@@ -1,5 +1,5 @@
 
-(define (version) "chez-lib v2.00") ;
+(define (version) "chez-lib v2.00") ;E
 (define (git-url) "https://gitxx.com/faiz-xxxx/chez-lib.git")
 
 #|
@@ -12,6 +12,8 @@
 
   - Update notes:
     - 2.00
+      - E add: (list/swap-each2 '(2 1 4 3 5))
+      - e add: ~range x0 n [f]
       - D add: remov-xths%
       - d upd: max-cnt-of-same
       - C add: rmap
@@ -2302,6 +2304,18 @@ to-test:
   xs ;?
 )
 
+;(list/swap-each2 '(2 1 4 3 5)) ;-> (range 1 5)
+(def (list/swap-each2 xs) ;
+  (def (~ ret xs)
+    (if~
+      [nilp xs] (rev ret)
+      [nilp (cdr xs)] (append/rev-head ret xs) ;
+      (let/ad xs
+        [~ (cons* a (cadr xs) ret) (cddr xs)]
+  ) ) )
+  (~ nil xs)
+)
+
 ; [duplicates '(123 321 123 321 321 1 2 3)] -> '(123 321 321 ...) -> remov-same
 (def (duplicates xs)
   (def (_ xs sml ret)
@@ -2691,7 +2705,7 @@ to-test:
   ) ) )
   [_ xs n0] ;
 )
-(defn list/-nth (xs) ;list->nth~ xs
+(def (list/-nth xs) ;list->nth~ xs
   (def (_ xs n)
     (if (nilp xs) nil
       (cons
@@ -3400,8 +3414,8 @@ to-test:
   (case-lam
     ( [s e] ;~
       (def (_ ret e)
-        (if (fx< e s) ret
-          [_ (cons e ret) (fx1- e)] ;
+        (if (< e s) ret ;
+          [_ (cons e ret) (1- e)] ;
       ) )
       (_ nil e) )
     ( [n] (iota n) )
@@ -3440,6 +3454,14 @@ to-test:
         ; (cons s [_ (f s p)])
     ; )
 ) )
+
+(def/va (~range x0 n [f (lam (x) (1+ x))]) ;~range x0 n f
+  (def (~ ret tmp n)
+    (if [eq n 0] ret ;
+      (~ (cons tmp ret) (f tmp) (1- n)) ;
+  ) )
+  (~ nil x0 n) ;
+)
 
 ;(range/total 30 4 ./ 2 0.1) ;
 (def/va (~range/total total [s 0] [f +] [p 1] [e nil]) ;n ;range-n
@@ -3791,7 +3813,7 @@ to-test:
 (def (tru? b)
   (if (eq #t b) #t #f)
 )
-(alias fal? not)
+(alias fal? not) ;
 (def  (neq x y) [not(eq  x y)])
 (defn !eql (x y) [not(eql x y)])
 
@@ -4477,7 +4499,7 @@ to-test:
 ) )
 
 (def/va
-  (digest% xs [level 12] ;7,8~12
+  (digest% xs [level 12] ;7, 8~12
     (doer
       (lam (x y)
         ;(+ [* (+ (sin x) (sin y)) 2] 5) ;1~9
@@ -4509,14 +4531,15 @@ to-test:
   (if [nilp xs] 0
     (nth
       [qsort
-        (compress [qsort xs lt])
+        (compress [qsort xs lt] =) ;
         (lam (x y) [> (nth x 2) (nth y 2)]) ] ;
       1 2
 ) ) )
 
 ;math end
 
-(def [len-1 x] (1-[len x]))
+(def [len-1 x] (1- [len x]))
+
 (def (find-ref% xs x st ed)
   (let ([ed (if(nilp ed)(len-1 xs)ed)][= (eq/eql x)])
     (def (_ xs x i)
