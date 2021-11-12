@@ -12,6 +12,7 @@
 
   - Update notes:
     - 2.00
+      -  F add: mt/xxx for matrix
       -  f add: remov-xth xs . xths
       -  E add: (list/swap-each2 '(2 1 4 3 5))
       -  e add: ~range x0 n [f]
@@ -4519,6 +4520,168 @@ to-test:
       (=0 [% yr 4])
       (!=0[% yr 100])
 ) ) )
+
+; matrix: rows columns
+
+;(make-matrix '(3 4 5) 1)
+(def (make-matrix dimensions val) ;dimension
+  (letn ([ln (redu * dimensions)] [xs (nx->list ln val)]) ;0?
+    (redu list->matrix (cons xs [rev (cdr dimensions)])) ;
+) )
+
+;(list->matrix '(1 2 3 4 5 6) 1 2)
+(def (list->matrix xs . dims) ;flat?
+  (def (~ xs dims)
+    (if [nilp dims] xs
+      (let/ad dims ;
+        [~ (group xs a) d] ;0? group-by
+  ) ) )
+  (~ xs dims)
+)
+
+(def (mt/dimens mt)
+  (def (~ ret xs)
+    (if [lisp xs]
+      [~ (cons (len xs) ret) (car xs)]
+      ret
+  ) )
+  [rev (~ nil mt)] ;
+)
+
+;mt/max-dimens
+(def (mt/max-dimens . mts) ;
+  (redu (curry map max) (map mt/dimens mts)) ;
+)
+
+(def (mt/n-rows    mt) (len mt))
+(def (mt/n-columns mt) (len (car mt)))
+
+(def/va (mt/fmt mt dims [val 0]) ;
+  (def (~ mt dims)
+    (if [nilp dims] mt
+      (letn
+        ( [m  (car dims)]
+          [ln (len mt)]
+          [mr (- m ln)] ;
+          [b  (> mr 0)]
+          [n  (if b mr 0)] )
+        (if b
+          (append
+            (map (rcurry ~ (cdr dims)) mt) ;@
+            (make-matrix (cons n (cdr dims)) val) )
+          (ncdr (map (rcurry ~ (cdr dims)) mt) mr) ;
+  ) ) ) )
+  (~ mt dims)
+)
+
+;(mt/calc (curry * 2) mt)
+(def (mt/calc f . mts) ;
+  (letn
+    ( [dims (redu mt/max-dimens mts)] ;
+      [mts2 (map (rcurry mt/fmt dims) mts)] )
+    (redu (curry map (curry map f)) mts2) ;
+) )
+
+
+;(dot-mul '(1 2 3) '(4 5))
+(def (dot-mul v1 v2) ;get-column? ;
+  (letn
+    ( [dims (mt/max-dimens v1 v2)] ;
+      [fmt (lam (v) (mt/fmt v dims))] ) ;@?
+    ;if same len
+    (redu + (map * (fmt v1) (fmt v2)))
+) )
+
+;(mt/get-column (make-matrix '(3 4) 1) 2)
+(def (mt/get-column mt n)
+  (map (rcurry nth n) mt)
+)
+
+(def (mt/flip mt) ;tl ;tr top left ;transposition
+  (redu (curry map list) mt)
+)
+
+(def (vec-mul-rev~flipped~mt% ve mt) ;
+  (def (~ ret xs)
+    (if [nilp xs] ret
+      (let/ad xs
+        [~ (cons (dot-mul ve a) ret) d]
+  ) ) )
+  (~ nil mt)
+)
+
+(def (mt* mt mt2) ;mxs sxn
+  (let ([~flip-mt2 (rev (mt/flip mt2))])
+    (map (lam (ve) (vec-mul-rev~flipped~mt% ve ~flip-mt2)) mt)
+) )
+
+(def (mt/inversable? mt) (not [= (mt/det mt) 0])) ;m=n?
+
+;https://www.shuxuele.com/algebra/matrix-determinant.html
+;(setq m66 (list->matrix (range 36) 6))
+(def (mt/det mt)
+  (let ([xz (cdr mt)])
+    (def (~ ret row i) ;
+      (if [nilp row] ret
+        (let/ad* row
+          ([sign (if (odd? i) 1 -1)]) ;
+          (~
+            (+ ret
+              (* ;sign a
+                [mt/det
+                  (map [lam (x) (remov-nth x i)] xz) ]
+                a sign
+            ) ) ;
+            d (1+ i)
+    ) ) ) )
+    (if [nilp xz]
+      (caar mt)
+      [~ 0 (car mt) 1] ;1
+) ) )
+
+;(mt/A* m33)
+(def (mt/A* mt) ;(-1)^(+ i j)
+  (def (~ mt i j)
+    (map (lam (x) (remov-xth x j)) ;remov-xth
+      (remov-xth mt i)
+  ) )
+  (def (~comple mt i j)
+    (* (if [even? (+ i j)] 1 -1)
+      (mt/det (~ mt i j)) ;
+  ) )
+  (def (~comples mt n) ;@
+    (collect (i n)
+      (collect (j n) ;m=n
+        (~comple mt i j)
+  ) ) )
+  (let ([tmp (~comples mt (len mt))])
+    (mt/flip tmp)
+) )
+
+(def (mt/rank mt)
+  (let
+    ([n (redu min (mt/dimens mt))])
+    (def (~ mt n)
+      (if [eq n 0] 0 ;
+        (letn
+          ( [mt2 (mt/fmt mt (list n n))] ;
+            [det (mt/det mt)] )
+          (if (= det 0) ;
+            [~ mt2 (1- n)]
+            n
+    ) ) ) )
+    (~ mt n)
+) )
+
+(def (mt/inverse mt)
+  (letn
+    ( [a* (mt/A* mt)] ;
+      [det (mt/det mt)] )
+    (if [= det 0] nil ;
+      (mt/calc (lam (x) (/ x det)) a*) ;
+) ) )
+
+;matrix
 
 (def (strnum- . snums)
   (number->string (redu~ - (map string->number snums)))
