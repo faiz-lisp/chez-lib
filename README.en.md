@@ -2,7 +2,7 @@
 
 #### Description
 
-My Chez libs
+My Chez lib
 
 #### Software Architecture
 

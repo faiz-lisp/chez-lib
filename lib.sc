@@ -1,9 +1,9 @@
 
-(define (version) "chez-lib v2.00") ;E
+(define (version) "chez-lib v2.00") ;
 (define (git-url) "https://gitxx.com/faiz-xxxx/chez-lib.git")
 
 #|
-== Chez-lib.sc (mainly for Windows NT) - written by Faiz
+== Chez-lib.sc (mainly for Windows NT) - written by Faiz ==
    ________  __                            __   __  _
   /    ___ \|  |__   ____ _______         |  | |__|| |__
   /    \  \/|  |  \_/ __ \\__   /   _____ |  | |  || __ \
@@ -12,17 +12,17 @@
 
   - Update notes:
     - 2.00
-      - E add: (list/swap-each2 '(2 1 4 3 5))
-      - e add: ~range x0 n [f]
-      - D add: remov-xths%
-      - d upd: max-cnt-of-same
-      - C add: rmap
-      - c add: (time->sec (get-time))
-      - B chg: eq/eql for num
-      - b add: dot: (keys->val kvs . keys)
-      - A add: (key->kv kvs key [= eql])
-      - a add: (filter-nths (curry eq 5) '(1 123  5 654 6 5 2)) ;-> nths
-      - ~ add: (float-len 1.23213) -> 5
+      -  E add: (list/swap-each2 '(2 1 4 3 5))
+      -  e add: ~range x0 n [f]
+      -  D add: remov-xths%
+      -  d upd: max-cnt-of-same
+      -  C add: rmap
+      -  c add: (time->sec (get-time))
+      -  B chg: eq/eql for num
+      -  b add: dot: (keys->val kvs . keys)
+      -  A add: (key->kv kvs key [= eql])
+      -  a add: (filter-nths (curry eq 5) '(1 123  5 654 6 5 2)) ;-> nths
+      -  ~ add: (float-len 1.23213) -> 5
     - 1.99
       - ZZ add: (map1/nths (lam (x) (list x)) '(1 2 213 123) '(2 4) F) ;-> '(1 [2] 213 [123])
       - Zz add: (.% 1.27 0.02) ;->0.01
@@ -58,52 +58,52 @@
       - Zc fas: factors
       - Zb add: do-for-pairs, odds, demo/fac~
       - Za add: let/ad*
-      - Z add : head-tail%, mysort
-      - z add : file/cont, keys->vals, flip, fill-lhs/rhs, rgb<->565;\n Fix : groups, arb-group
-      - Y fix : files/cont: more?
-      - y Fix : choose: once?
-      - W add : rand-seq
-      - v add : ref%, ref*, refs*
-      - T add : chg-nth, chg-ref-val ;
-      - S upd : refs nths xths pts->vals
-      - r upd : demo maze
-      - Q upd : str-repl%, replace% can CRUD ;
-      - O add : (do-for xs conv deconv)
-      - L add : elem-freq, mem?-and-do
-      - K add : save-bin-file
-      - I add : strcat/sep-per flow load-binary-file
-      - i Upd : (save-file cont file [codec "utf-8"])
-      - h add : replaces, str-repls, get-file-var ...
-      - G upd : divide
-      - F add : str-trim-all
-      - D upd : case (compose); fix : gotcha;
-      - a add : (collect 10 (do-sth))
-      - ~ add : int<->str/system, digit<->char, global vars
+      - Z  add: head-tail%, mysort
+      - z  add: file/cont, keys->vals, flip, fill-lhs/rhs, rgb<->565;\n Fix : groups, arb-group
+      - Y  fix: files/cont: more?
+      - y  Fix: choose: once?
+      - W  add: rand-seq
+      - v  add: ref%, ref*, refs*
+      - T  add: chg-nth, chg-ref-val ;
+      - S  upd: refs nths xths pts->vals
+      - r  upd: demo maze
+      - Q  upd: str-repl%, replace% can CRUD ;
+      - O  add: (do-for xs conv deconv)
+      - L  add: elem-freq, mem?-and-do
+      - K  add: save-bin-file
+      - I  add: strcat/sep-per flow load-binary-file
+      - i  Upd: (save-file cont file [codec "utf-8"])
+      - h  add: replaces, str-repls, get-file-var ...
+      - G  upd: divide
+      - F  add: str-trim-all
+      - D  upd: case (compose); fix : gotcha;
+      - a  add: (collect 10 (do-sth))
+      - ~  add: int<->str/system, digit<->char, global vars
     - 1.98
-      - Z add : separa, strcat/sep
-      - X add : str-divides, file-ext, str/sep-chars
-      - W add : str-exist?
-      - S add : load-file
-      - r add : key->val xz x
-      - Q add : (divide-after '(x m k y m k z) '(m k)) ~> '([x m k] [y m k] [z]); divide; str-divide
-      - p Upd : (lisp nil) ~> F
-      - O add : path operations and grep
-      - o add : range/total
-      - n add : (fixnum 1/1.2);\n upd : (sleep 1.0);
-      - I add : make-file, make-path
-      - C add : (list/seps '(1 2 3) '(4 5)) ~> '(1 4 5 2 4 5 3)
-      - B Add : (lam/lams ([(a) b] c . xs) [append (list a b c) xs])
-      - ~ add : in-range;
+      -  Z add: separa, strcat/sep
+      -  X add: str-divides, file-ext, str/sep-chars
+      -  W add: str-exist?
+      -  S add: load-file
+      -  r add: key->val xz x
+      -  Q add: (divide-after '(x m k y m k z) '(m k)) ~> '([x m k] [y m k] [z]); divide; str-divide
+      -  p Upd: (lisp nil) ~> F
+      -  O add: path operations and grep
+      -  o add: range/total
+      -  n add: (fixnum 1/1.2);\n upd : (sleep 1.0);
+      -  I add: make-file, make-path
+      -  C add: (list/seps '(1 2 3) '(4 5)) ~> '(1 4 5 2 4 5 3)
+      -  B Add: (lam/lams ([(a) b] c . xs) [append (list a b c) xs])
+      -  ~ add: in-range;
     - 1.97
-      - w Add : (deep& rev char-downcase '((#\a #\s) #\D)) ~> '(#\d (#\s #\a))
-      - v Add : (deep-exist-match? [lam (x) (cn-char? x)] '((#\我) #\3)) ~> T
-      - Q Add : (trim '(1 2 1 2 1 1 2 3 1 2) '(1 2)) ~> '(1 1 2 3) ;
-      - O upd : (beep [456] [500]);\nadd : getcwd;
-      - N add : def-ffi, shell-execute
-      - L fix : for: map -> for-each; upd : tail=list-tail; add : tail%
-      - h Add : (doc-add '(load-lib str)) (doc load-lib)~>'(load-lib str)
-      - c Add : htab-:kvs,keys,values
-      - ~ Add : (doc-ls co) -> documentable-keys -> '(cons cond); house keeping;
+      -  w Add: (deep& rev char-downcase '((#\a #\s) #\D)) ~> '(#\d (#\s #\a))
+      -  v Add: (deep-exist-match? [lam (x) (cn-char? x)] '((#\我) #\3)) ~> T
+      -  Q Add: (trim '(1 2 1 2 1 1 2 3 1 2) '(1 2)) ~> '(1 1 2 3) ;
+      -  O upd: (beep [456] [500]);\nadd : getcwd;
+      -  N add: def-ffi, shell-execute
+      -  L fix: for: map -> for-each; upd : tail=list-tail; add : tail%
+      -  h Add: (doc-add '(load-lib str)) (doc load-lib)~>'(load-lib str)
+      -  c Add: htab-:kvs,keys,values
+      -  ~ Add: (doc-ls co) -> documentable-keys -> '(cons cond); house keeping;
     - 1.96 Add: docs, def/doc, doc, doc-paras
     - 1.95 Upd: fold (_ f x xs), foldl-n (_ n fn xs), infix->prefix (_ xs), ./
     - 1.94 Add: self-act (_ pow 2 3) => (pow 2 2 2), rev-calc (_ pow 4) => 2

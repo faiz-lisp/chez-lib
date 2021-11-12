@@ -2,7 +2,7 @@
 
 #### 介绍
 
-My Chez libs
+My Chez lib
 
 #### 软件架构
 
