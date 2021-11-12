@@ -12,6 +12,7 @@
 
   - Update notes:
     - 2.00
+      -  f add: remov-xth xs . xths
       -  E add: (list/swap-each2 '(2 1 4 3 5))
       -  e add: ~range x0 n [f]
       -  D add: remov-xths%
@@ -108,7 +109,6 @@
     - 1.95 Upd: fold (_ f x xs), foldl-n (_ n fn xs), infix->prefix (_ xs), ./
     - 1.94 Add: self-act (_ pow 2 3) => (pow 2 2 2), rev-calc (_ pow 4) => 2
     - 1.93 Simp algo: fast-expt, (_ g x [n 1])
-    - 1.91 add: logic for dividing vowels in japanese
 
   - Suffixes:
     - @ slow / bad
@@ -241,7 +241,7 @@
     - data
     - main
       - exp/idea
-    - cleaner
+    - clean
 
   - tolearn:
     - match
@@ -4642,6 +4642,18 @@ to-test:
   ) ) ) )
   (_ xs [sort < (filter >0 nths)] 1) ;
 )
+
+(def (remov-xth xs . xths)
+  (def (_ xs xths n)
+    (if (nilp xs) nil
+      (if (nilp xths) xs
+        (if [eq (car xths) n]
+          [_ (cdr xs) (cdr xths) (1+ n)]
+          (cons (car xs) [_ (cdr xs) xths (1+ n)])
+  ) ) ) )
+  (_ xs xths 0) ;
+)
+
 (def (remov-nth xs . nths)
   (def (_ xs nths n)
     (if (nilp xs) nil
