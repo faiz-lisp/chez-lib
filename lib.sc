@@ -12,6 +12,7 @@
 
   - Update notes:
     - 2.00
+      -  g add: y=fx y=fx->paras
       -  F add: mt/xxx for matrix
       -  f add: remov-xth xs . xths
       -  e add: ~range x0 n [f]
@@ -4679,6 +4680,21 @@ to-test:
 ) ) )
 
 ;matrix
+
+;(def (y=fx paras x) (redu +(map * paras(~range 1 (len paras) (lam (n) [* x n]))))) ;@
+(alias y=fx list->int/scale)
+
+;(y=fx->paras '(pt pt2 pt3 ...))
+(def (y=fx->paras pts) ;cost ms: x5 1, x6 10, x7 100, x8 1s ;n^2... ;for for
+  (letn
+    ( [n  (len pts)]
+      [xs (map car pts)]
+      [ys (map cadr pts)]
+      [gen  (lam (x) (~range 1 n (lam (~) (* x ~))))] ;
+      [xz   (map gen xs)]
+      [resl (mt* (mt/inverse xz) (map list ys))] ) ;
+    (map car resl)
+) )
 
 (def (strnum- . snums)
   (number->string (redu~ - (map string->number snums)))
