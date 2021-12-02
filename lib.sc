@@ -12,17 +12,17 @@
 
   - Update notes:
     - 2.00
+      -  h add: sort-by-sames xs > > [append? T]
+      -  G add: euler
       -  g add: y=fx y=fx->paras
       -  F add: mt/xxx for matrix
-      -  f add: remov-xth xs . xths
       -  e add: ~range x0 n [f]
-      -  D add: remov-xths%
       -  d upd: max-cnt-of-same
       -  C add: rmap
       -  c add: (time->sec (get-time))
       -  A add: (key->kv kvs key [= eql])
       -  a add: (filter-nths (curry eq 5) '(1 123  5 654 6 5 2)) ;-> nths
-      -  ~ add: (float-len 1.23213) -> 5
+      -  - add: (float-len 1.23213) -> 5
     - 1.99
       - ZZ add: (map1/nths (lam (x) (list x)) '(1 2 213 123) '(2 4) F) ;-> '(1 [2] 213 [123])
       - Zz add: (.% 1.27 0.02) ;->0.01
@@ -78,7 +78,7 @@
       - F  add: str-trim-all
       - D  upd: case (compose); fix : gotcha;
       - a  add: (collect 10 (do-sth))
-      - ~  add: int<->str/system, digit<->char, global vars
+      - -  add: int<->str/system, digit<->char, global vars
     - 1.98
       -  Z add: separa, strcat/sep
       -  X add: str-divides, file-ext, str/sep-chars
@@ -93,7 +93,7 @@
       -  I add: make-file, make-path
       -  C add: (list/seps '(1 2 3) '(4 5)) ~> '(1 4 5 2 4 5 3)
       -  B Add: (lam/lams ([(a) b] c . xs) [append (list a b c) xs])
-      -  ~ add: in-range;
+      -  - add: in-range;
     - 1.97
       -  w Add: (deep& rev char-downcase '((#\a #\s) #\D)) ~> '(#\d (#\s #\a))
       -  v Add: (deep-exist-match? [lam (x) (cn-char? x)] '((#\我) #\3)) ~> T
@@ -103,7 +103,7 @@
       -  L fix: for: map -> for-each; upd : tail=list-tail; add : tail%
       -  h Add: (doc-add '(load-lib str)) (doc load-lib)~>'(load-lib str)
       -  c Add: htab-:kvs,keys,values
-      -  ~ Add: (doc-ls co) -> documentable-keys -> '(cons cond); house keeping;
+      -  - Add: (doc-ls co) -> documentable-keys -> '(cons cond); house keeping;
     - 1.96 Add: docs, def/doc, doc, doc-paras
     - 1.95 Upd: fold (_ f x xs), foldl-n (_ n fn xs), infix->prefix (_ xs), ./
     - 1.94 Add: self-act (_ pow 2 3) => (pow 2 2 2), rev-calc (_ pow 4) => 2
@@ -364,9 +364,9 @@
 
 (ali folder? file-directory?)
 
-(def-syt define*
-  (syt-ruls ()
-    ( [_ x] (define x *v) ) ;
+(define-syntax define*
+  (syntax-rules ()
+    ( [_ x] (define x [void]) ) ;
     ( [_ (g . args) body ...] ;
       (define (g . args) body ...) )
     ( [_ x e] (define x e) ) ;sym? e: e *v
@@ -453,21 +453,21 @@
 
 ;
 
-(def-syt defsyt
-  (syt-ruls ()
-    ( [_ f (expr body ...)] ;;;one ;must be bef (_ f g), or will make wrong meanings
-      (def-syt f
-        (syt-ruls ()
+(define-syntax defsyt
+  (syntax-rules ()
+    ( [_ f (expr body ...)] ;;one ;must be bef (_ f g)
+      (define-syntax f
+        (syntax-rules ()
           (expr
-            (bgn body ...) ) ) ) ) ;
+            (begin body ...) ) ) ) ) ;
     ( [_ f g]
-      (def-syt f
-        (syt-ruls ()
+      (define-syntax f
+        (syntax-rules ()
           ( [_ . args] ;
             (g . args) ) ) ) )
     ( [_ f (expr ...) ...]   ;multiple
-      (def-syt f
-        (syt-ruls ()
+      (define-syntax f
+        (syntax-rules ()
           (expr ...) ...
 ) ) ) ) )
 
@@ -3060,6 +3060,14 @@ to-test:
 
 ;(_ '(1 2 1 2 3 0 1 2 3)) ;-> 1 2 3 -> '(([1 2 3] 2) ([1 2] 1) ([0] 1))
 
+(def/va (decompress xz [append? T]) ;
+  (let
+    ( (tmp
+        (map (lam (xs) (nx->list (cadr xs) (car xs))) xz)
+    ) )
+    (if append? (redu append tmp) tmp)
+) )
+
 ;elap cant print ""
 
 (def (logic-and . bs) ;&&
@@ -4485,6 +4493,14 @@ to-test:
 ;(cost (prime (1-[redu~ * (primes 2 13)]) 1))
 ;402245102020351 is the nth? prime-num start from 2 ?
 
+;(euler 1323) -> 756
+(def (euler num)
+  (let ([f (lam (p) (- 1 (/ p)))])
+    (foldl * num
+      (map (lam (xn) (f (car xn)))
+        (compress (qsort (factors num) >))
+) ) ) )
+
 (def n-digits ;integer-length 128 2
   (case-lam
     ([num m] ;@ not for float
@@ -5071,15 +5087,14 @@ to-test:
 )
 
 (define (fib0 n)
-  (define (_ n) ;
-    (case n ;
-      ([0]    0)
-      ([1 2]  1)
+  (define (~ n)
+    (case n
+      ([0 1] n) ;
       (else
-        (fx+ [_ (fx- n 2)] ;
-          [_ (fx1- n)] ;
+        (+ [~ (-  n 2)] ;
+           [~ (fx1- n)]
   ) ) ) )
-  (_ n)
+  (~ n)
 )
 ;(cost (fib0 42)) ;realtime = 1.111~1.176 s
 ;gmp: (fib 1E) just 1s
@@ -5893,7 +5908,7 @@ to-test:
 
 ;algo for vec-sort
 
-;sort
+; sort
 
 (def (car->end! xs) ;end->car! 1
   (if (cdr-nilp xs) xs ;
@@ -5944,6 +5959,18 @@ to-test:
   ) ) ) )
   [_ ls (len ls)]
 )
+
+(def/va (sort-by-sames xs [g >] [h >] [append? T]) ;>/</nil
+  (letn
+    ( [pre (if [nilp g] xs (qsort xs g))]
+      [tmp (compress pre)]
+      (next
+        (if [nilp h] tmp
+          (qsort tmp
+            [lam (x y) (h (cadr x) (cadr y))]
+    ) ) ) )
+    (decompress next append?)
+) )
 
 (def randnums
   (case-lam
