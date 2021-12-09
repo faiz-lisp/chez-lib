@@ -12,6 +12,8 @@
 
   - Update notes:
     - 2.00
+      -  I Add: data-compress for pic
+      -  H upd: collect supp in
       -  h add: sort-by-sames xs > > [append? T]
       -  G add: euler
       -  g add: y=fx y=fx->paras
@@ -22,7 +24,6 @@
       -  c add: (time->sec (get-time))
       -  A add: (key->kv kvs key [= eql])
       -  a add: (filter-nths (curry eq 5) '(1 123  5 654 6 5 2)) ;-> nths
-      -  - add: (float-len 1.23213) -> 5
     - 1.99
       - ZZ add: (map1/nths (lam (x) (list x)) '(1 2 213 123) '(2 4) F) ;-> '(1 [2] 213 [123])
       - Zz add: (.% 1.27 0.02) ;->0.01
@@ -48,7 +49,7 @@
       - ZK fas: myround -> round*
       - Zk upd: doremi->Hz; add: call-xn
       - ZJ upd: ~=; add: pow/, pow-root
-      - Zj upd: avg%, UI
+      - Zj upd: avg%
       - ZI fix: deep&
       - Zi add: int->list next-to
       - Zg add: fold% exist-same? max-min
@@ -77,7 +78,6 @@
       - G  upd: divide
       - F  add: str-trim-all
       - D  upd: case (compose); fix : gotcha;
-      - a  add: (collect 10 (do-sth))
       - -  add: int<->str/system, digit<->char, global vars
     - 1.98
       -  Z add: separa, strcat/sep
@@ -93,7 +93,6 @@
       -  I add: make-file, make-path
       -  C add: (list/seps '(1 2 3) '(4 5)) ~> '(1 4 5 2 4 5 3)
       -  B Add: (lam/lams ([(a) b] c . xs) [append (list a b c) xs])
-      -  - add: in-range;
     - 1.97
       -  w Add: (deep& rev char-downcase '((#\a #\s) #\D)) ~> '(#\d (#\s #\a))
       -  v Add: (deep-exist-match? [lam (x) (cn-char? x)] '((#\我) #\3)) ~> T
@@ -101,7 +100,6 @@
       -  O upd: (beep [456] [500]);\nadd : getcwd;
       -  N add: def-ffi, shell-execute
       -  L fix: for: map -> for-each; upd : tail=list-tail; add : tail%
-      -  h Add: (doc-add '(load-lib str)) (doc load-lib)~>'(load-lib str)
       -  c Add: htab-:kvs,keys,values
       -  - Add: (doc-ls co) -> documentable-keys -> '(cons cond); house keeping;
     - 1.96 Add: docs, def/doc, doc, doc-paras
@@ -475,7 +473,7 @@
   ( [_ (f . args) body ...]
     (defsyt f ;
       ( [_ . args]
-        (bgn body ...) ;
+        (begin body ...) ;
   ) ) )
   ( [_ f (args ...) body ...]
     (defm (f args ...) body ...)
@@ -483,18 +481,17 @@
 
 (def-syt (if% stx)
   (syt-case stx (else)
-    ([_ () (bd ...)]
-    #'(cond bd ...) )
-    ([_ (last-expr) (bd ...)]
-    #'(if% () (bd ... [else last-expr])) )
-    ([_ (k e more ...) (bd ...)]
-    #'(if% (more ...) (bd ... [k e])) )
-) )
+    ( [_ () (bd ...)]
+      #'(cond bd ...) )
+    ( [_ (last-expr) (bd ...)]
+      #'(if% () (bd ... [else last-expr])) )
+    ( [_ (k e more ...) (bd ...)]
+      #'(if% (more ...) (bd ... [k e]))
+) ) )
 (def-syt (if~ stx)
   (syt-case stx ()
     ([_ bd ...]
       #'(if% [bd ...] []) ;
-      ;#'[sy-redu cond (group (bd ...) 2)] ;sy-group
 ) ) )
 
 (defsyt defun
@@ -783,14 +780,21 @@ to-test:
 ) ) ) )
 
 ;(collect 20 expr)
-(defsyt collect
-  ( [_ (i num) do-sth]
-    (let _ ([i 0])
-      (if [>= i num] nil
-        (cons do-sth [_ (1+ i)]) ;
-  ) ) )
-  ( [_ num do-sth]
-    (collect [i num] do-sth)
+(def-syt collect
+  (syt-ruls (in)
+    ( [_ (i num) do-sth]
+      (let _ ([i 0])
+        (if [>= i num] nil
+          (cons do-sth [_ (1+ i)]) ;
+    ) ) )
+    ( [_ (i in xs) body ...]
+      (let loop ([l xs])
+        (if (nilp l) nil
+          (let ([i (car l)])
+            (cons (bgn body ...) [loop (cdr l)]) ;
+    ) ) ) )
+    ( [_ num do-sth]
+      (collect [i num] do-sth) )
 ) )
 
 (def-syt for ;(for-each g xs)
@@ -1479,7 +1483,7 @@ to-test:
 (defm (api? x) (bool [mem? 'x (syms)]))
 
 ;https://cisco.github.io/ChezScheme/csug9.5/summary.html#./summary:h0
-(defm (api-with . xs)
+(defm (api-with . xs) ;
   (let ~ ([ret (syms)] [ys 'xs]) ;
     (if (nilp ys) ret
       (let/ad ys
@@ -5092,6 +5096,7 @@ to-test:
       ([0 1] n) ;
       (else
         (+ [~ (-  n 2)] ;
+           ;[~ (-  n 1)]
            [~ (fx1- n)]
   ) ) ) )
   (~ n)
@@ -5427,7 +5432,7 @@ to-test:
     [s-path "."]
     [case? T] ;[show-ori-when-fail? T]
     [more? T]
-    [chk-ext (rcurry mem? '("h" "cpp" "txt" "md" "xls" "html"))]
+    [chk-ext (rcurry mem? '("h" "cpp" "txt" "md" "xls" "html"))] ;"" "json" "conf"
     [tar-format id] )
   (file/cont ss s-path case? more? chk-ext tar-format)
 )
@@ -6573,6 +6578,32 @@ to-test:
 )
 
 ; data
+
+(def/va (data-compress xs [chk? F]) ;for simply compressing pic data
+  (let ([tmp (compress (qsort xs))])
+    (if (and chk? [> (len tmp) (sqrt (1+ (redu max xs)))]) xs ;.1+
+      (letn
+        ( [vals (map car tmp)]
+          [kv   (list/nth vals 0)] ;
+          [keys (map (lam (v) (val->key kv v)) xs)] )
+        (list kv keys)
+) ) ) )
+
+(def/va (data-size/bits dat [nbits 1])
+  (letn
+    ( [mx (1+ (redu max dat))] ;1+
+      [mx-bit (ceil (log mx 2))] ;.
+      [ln (len dat)] )
+    (./ (* mx-bit ln) nbits) ;
+) )
+
+(def (data-decompress kv-keys) ;if
+  (letn
+    ( [keys (cadr kv-keys)]
+      [kv   (car  kv-keys)]
+      [vals (map (lam (k) (key->val kv k)) keys)] )
+    vals
+) )
 
 (setq *tab/jp/key-a-A* ;Xy: y: a i u e o ;z: n
  '( [  a あ ア][  i い イ][  u う ウ][  e え エ][  o お オ] ;ェ
