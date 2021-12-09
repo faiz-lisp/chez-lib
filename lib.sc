@@ -12,6 +12,7 @@
 
   - Update notes:
     - 2.00
+      -  j add: rgb->yuv
       -  I Add: data-compress for pic
       -  H upd: collect supp in
       -  h add: sort-by-sames xs > > [append? T]
@@ -6580,7 +6581,7 @@ to-test:
 ; data
 
 (def/va (data-compress xs [chk? F]) ;for simply compressing pic data
-  (let ([tmp (compress (qsort xs))])
+  (let ([tmp (compress (qsort xs))]) ;qsort more>less
     (if (and chk? [> (len tmp) (sqrt (1+ (redu max xs)))]) xs ;.1+
       (letn
         ( [vals (map car tmp)]
@@ -6603,6 +6604,27 @@ to-test:
       [kv   (car  kv-keys)]
       [vals (map (lam (k) (key->val kv k)) keys)] )
     vals
+) )
+
+;(rgb->yuv '(r g b)) ;-> '(y u v)
+(def (rgb->yuv rgb) ;std
+  (let
+    ( [y (foldl +  0  (map * '( 0.29882   0.58681   0.114363) rgb))] ;std
+      [u (foldl + 128 (map * '(-0.172485 -0.338718  0.511207) rgb))] ;Pb
+      [v (foldl + 128 (map * '( 0.51155  -0.42811  -0.08343 ) rgb))] ;Pr
+    )
+    (map int (list y u v)) ;
+) )
+
+;(yuv->rgb '(255 128 128))
+(def (yuv->rgb yuv)
+  (letn
+    ( [y (car yuv)] [u (- (cadr yuv) 128)] [v (- (caddr yuv) 128)] ;
+      [r (+ y (* 1.370705 v))] ;std
+      [g (+ y (* -0.337633 u) (* -0.698001 v))]
+      [b (+ y (* 1.732446 u))]      
+    )
+    (map int (list r g b)) ;
 ) )
 
 (setq *tab/jp/key-a-A* ;Xy: y: a i u e o ;z: n
