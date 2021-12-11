@@ -12,6 +12,8 @@
 
   - Update notes:
     - 2.00
+      -  k fix: map-for-combinations
+      -  J add: defs which is like setq for inner
       -  j add: rgb->yuv
       -  I Add: data-compress for pic
       -  H upd: collect supp in
@@ -155,8 +157,7 @@
     - eq =, eql
 
   - todo:
-    - lam/va, lam-macro
-    - include
+    - lam/va, lam-macro - include
     - pcre->match?
     - (deep-action/map/apply g xs [seq]): d-remov
     - end->car
@@ -328,8 +329,8 @@
 (alias syt-ruls syntax-rules)
 (alias syt-case syntax-case)
 (alias case-lam case-lambda)
-(alias els      else)
 (alias progn    begin)
+(alias els      else)
 (alias vec      vector)
 (alias vecp     vector?)
 (alias vec-ref  vector-ref)
@@ -481,7 +482,7 @@
 ) )
 
 (def-syt (if% stx)
-  (syt-case stx (else)
+  (syt-case stx (else) ;
     ( [_ () (bd ...)]
       #'(cond bd ...) )
     ( [_ (last-expr) (bd ...)]
@@ -559,7 +560,18 @@
     (def_ (f . args) bd...)
 ) )
 
-(defsyt setq
+(defsyt defs ;inner
+  ((_ a) (def a (void)))
+  ((_ a b)
+    (bgn (def a b) (if *will-ret* a)) ;
+  )
+  ((_ a b c ...)
+    (bgn
+      (def a b)
+      (defs c ...) ;
+) ) )
+
+(defsyt setq ;outer
   ((_ a) (set! a (void)))
   ((_ a b)
     (bgn (set! a b) (if *will-ret* a))
@@ -991,7 +1003,7 @@ to-test:
   ( [_ xs i y]
     (letn([pre (head xs i)]
           [pos (tail xs i)])
-      (setq xs (append! pre (cons y pos)))
+      (setq xs (append! pre (cons y pos))) ;
 ) ) )
 
 (defsyt swap-xths!
@@ -1023,7 +1035,7 @@ to-test:
 ) )
 
 (def-syt (push stx)
-  (syt-case stx () ;
+  (syntax-case stx () ;
     ( [_ args ... x]
       (identifier? #'x) ;
       #'(setq x (cons* args ... x)) ) ;
@@ -1061,7 +1073,7 @@ to-test:
       ((num?  x)      "number") ;
       ((char? x)      "char") ;
       ((str?  x)      "string") ;
-      ((nil?  x)      "null")
+      ((nilp  x)      "null")
       ((list? x)      "list") ;
       ((pair? x)      "pair")
       ;((ffi?  x)      "ffi") ;
@@ -3307,13 +3319,13 @@ to-test:
     ((number? x) (number->string      x))
     ((char?   x) (list->string (list  x)))
     ((string? x)                      x)
-    ((list?   x) (lis->str            x))
+    ((list?   x) (lis->str            x)) ;
     ((pair?   x) (lis->str(pair->list% x)))
     ;((ffi?   x) (sym->str           'x)) ;name?
     ((fn?     x)  "") ;ty?
     ((void?   x)  "")
     ((atom?   x) (sym->str           'x)) ;
-    (els          "")
+    (else          "")
 ) )
 (def (lis->str xs) ;
   (redu~ strcat (map any->str xs)) ;
@@ -3400,7 +3412,7 @@ to-test:
       (if~
         [nilp xs]
           (ret-er F tmp) ;
-        [= X (car xs)]
+        [= (car xs) X] ;
           (ret-er (doer xs) tmp) ;
         [_ (cons [car xs] tmp) (cdr xs)] ;collector @
     ) )
@@ -4983,15 +4995,16 @@ to-test:
     (def [_ ret tmp xs xz]
       (if (nilp tmp)
         (if (nilp xz)
-          (map (curry redu g) ret) ;;~map ~redu
-          [~ nil [rev ret] (car xz) (cdr xz)] ) ;;@
+          (map (curry redu g) ;lam
+            (deep-rev ret) ) ;
+          [~ nil [rev ret] (car xz) (cdr xz)] ) ;
         (if (nilp xs)
           [_ ret (cdr tmp) xs0 xz] ;
-          [_ (cons [cons(car xs)(car tmp)] ret) tmp (cdr xs) xz] ;;
+          [_ (cons [cons(car xs)(car tmp)] ret) tmp (cdr xs) xz] ;
     ) ) )
     [_ ret tmp0 xs0 xz]
   )
-  (deep-rev [~ nil (list nil) (car xz) (cdr xz)]) ;remov nil xz
+  [~ nil (list nil) (car xz) (cdr xz)] ;remov nil xz
 ) ;4x+ slow
 ;
 
@@ -5316,7 +5329,7 @@ to-test:
 ;(with-str?-nocase "asdqQllkj" "QQ")
 (def (with-str? ss sx) ;str-with?/nocase
   (let ([conv str->list])
-    (with? (conv ss) (conv sx))
+    (with? (conv ss) (conv sx)) ;
 ) )
 (def (with-str?-nocase ss sx)
   (let ([conv str->list])
@@ -6333,7 +6346,7 @@ to-test:
 
 (def (get-ms) ;get-sec-nano
   (letn
-    ( [time (current-time)]
+    ( [time (current-time)] ;
       [sec  (time-second time)]
       [nano (time-nanosecond time)] )
     [+ (* sec [pow 10. 3.]) (* nano [pow 10. -6.])] ;(real-time)?
@@ -6470,7 +6483,7 @@ to-test:
     ( [xs ys eql] ;(_ '(1 2 3 4) '(2 3/4)) ;-> Y/N ;with/contain-p
       (def (_ xs)
         (if (nilp xs) F
-          (if (with-head? xs ys eql) T ;
+          (if (with-head? xs ys eql) T ;output?
             [_ (cdr xs)] ;
       ) ) )
       (if (nilp ys) F
@@ -6607,7 +6620,7 @@ to-test:
 ) )
 
 ;(rgb->yuv '(r g b)) ;-> '(y u v)
-(def (rgb->yuv rgb) ;std
+(def (rgb->yuv rgb) ;std ;601/std/709
   (let
     ( [y (foldl +  0  (map * '( 0.29882   0.58681   0.114363) rgb))] ;std
       [u (foldl + 128 (map * '(-0.172485 -0.338718  0.511207) rgb))] ;Pb
@@ -6616,7 +6629,7 @@ to-test:
     (map int (list y u v)) ;
 ) )
 
-;(yuv->rgb '(255 128 128))
+;(yuv->rgb (rgb->yuv '(255 127 63)))
 (def (yuv->rgb yuv)
   (letn
     ( [y (car yuv)] [u (- (cadr yuv) 128)] [v (- (caddr yuv) 128)] ;
@@ -6737,7 +6750,7 @@ to-test:
 
 ; setq global vars
 
-(setq *paths* nil) ;shared ;ng name
+(setq *paths* nil) ;shared ;ng name ;*choose-paths*
 
 (setq
   *chs-numbers*  [map digit->char (range 0 9)]
