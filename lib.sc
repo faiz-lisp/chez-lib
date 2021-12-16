@@ -12,6 +12,7 @@
 
   - Update notes:
     - 2.00
+      -  K chg: stru> ~> any>
       -  k fix: map-for-combinations
       -  J add: defs which is like setq for inner
       -  j add: rgb->yuv
@@ -22,7 +23,6 @@
       -  g add: y=fx y=fx->paras
       -  F add: mt/xxx for matrix
       -  e add: ~range x0 n [f]
-      -  d upd: max-cnt-of-same
       -  C add: rmap
       -  c add: (time->sec (get-time))
       -  A add: (key->kv kvs key [= eql])
@@ -308,7 +308,7 @@
 
 |#
 
-(import (chezscheme)) ;you need this when used --program
+;(import (chezscheme)) ;you need this when used --program
 ;(collect-request-handler void) ;~ for some optimizing
 
 ;(load (str *lib-path* "/match.ss"))
@@ -331,6 +331,7 @@
 (alias case-lam case-lambda)
 (alias progn    begin)
 (alias els      else)
+
 (alias vec      vector)
 (alias vecp     vector?)
 (alias vec-ref  vector-ref)
@@ -2093,7 +2094,7 @@ to-test:
 
 ;
 
-(def (quiet . xs) )
+(def (quiet . xs) xs *v)
 
 (defn str-mapcase% (mf s)
   (list->string (map mf (string->list s))) ;
@@ -3342,7 +3343,7 @@ to-test:
 (def (str . xs) (lis->str xs))
 
 (def (pair->list% pr) ;'(1 . ()) ~> '(1 ())
-  (li (car pr) (cdr pr))
+  (list (car pr) (cdr pr))
 )
 
 (def (xn-mk-list% xns)
@@ -3422,7 +3423,7 @@ to-test:
 (def (echo% sep . xs) ;(_ xs [sep " "]) ;voidp
   (def (_ sep xs)
     (case [len xs] ;
-      (0 *v)
+      (0 (void))
       (1 (disp (car xs))) ;
       (else
         (disp (car xs) sep)
@@ -3569,7 +3570,7 @@ to-test:
 
 
 (def (echol . xs)
-  (apply echo xs) (newln) ;
+  (apply echo xs) (newline) ;
 )
 
 (def [read-expr . xs]
@@ -3881,7 +3882,7 @@ to-test:
 (def (atom> x y) (mk<>= atom-cmp (list x y) '>))
 (def (atom< x y) (mk<>= atom-cmp (list x y) '<))
 
-(def (stru-cmp xs ys)
+(def (any-cmp xs ys)
   (def (_ xs ys)
     (if [nilp xs] '= ;
       (if [consp xs] ;? < atom nil pair list
@@ -3902,10 +3903,10 @@ to-test:
   ) ) )
   (_ xs ys)
 )
-;(defn stru> (x y) (mk<>= stru-cmp (li x y) '>))
-(def (stru> x y) [eq (stru-cmp x y) '>])
-(def (stru< x y) [eq (stru-cmp x y) '<])
-(def (stru= x y) [eq (stru-cmp x y) '=])
+;(defn any> (x y) (mk<>= any-cmp (li x y) '>))
+(def (any> x y) [eq (any-cmp x y) '>])
+(def (any< x y) [eq (any-cmp x y) '<])
+(def (any= x y) [eq (any-cmp x y) '=])
 
 (def (assert0 resl test)
   (echol
@@ -4030,7 +4031,7 @@ to-test:
 
 (def (elem-freq xs)
   (qsort
-    ;(compress (qsort xs stru<))
+    ;(compress (qsort xs any<))
     (elem-freq% xs eq)
     [lam (x y) (> (cadr x) (cadr y))]
 ) )
@@ -4321,7 +4322,7 @@ to-test:
       (if~
         [= resl tar] ;(inexa
           x ;)
-        [> resl tar] ;stru>
+        [> resl tar] ;any>
           [_ x (avg pre x) pre] ;..
         [_ nex (avg nex x) x]
   ) ) )
