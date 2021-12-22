@@ -12,6 +12,7 @@
 
   - Update notes:
     - 2.00
+      -  L upd: nx->list
       -  K chg: stru> ~> any>
       -  k fix: map-for-combinations
       -  J add: defs which is like setq for inner
@@ -318,11 +319,11 @@
 ;================= aliases and syntaxes ===================
 
 (alias ali      alias)
-(alias imp      import)
+(ali   imp      import)
 (ali   lam      lambda)
 (ali   letn     let*)
-(ali   bgn      begin)
 (ali   fn       lambda)
+(ali   bgn      begin)
 
 (alias quo      quote)
 (alias def-syt  define-syntax)
@@ -338,8 +339,8 @@
 (alias vec->lis vector->list)
 (alias lis->vec list->vector)
 (alias vec-len  vector-length)
-(alias id id-car)
 
+(alias id id-car)
 (ali exist-file? file-exists?)
 
 ; defaults
@@ -367,8 +368,8 @@
 
 (define-syntax define*
   (syntax-rules ()
-    ( [_ x] (define x [void]) ) ;
-    ( [_ (g . args) body ...] ;
+    ( [_ x] (define x [void]) ) 
+    ( [_ (g . args) body ...] 
       (define (g . args) body ...) )
     ( [_ x e] (define x e) ) ;sym? e: e *v
     ; ;The followings make def slow:
@@ -409,7 +410,7 @@
 (alias reduce apply) ;
 (alias redu   apply) ;
 (alias strcat string-append)
-(alias foldl  fold-left) ;
+(alias foldl  fold-left)
 (alias foldr  fold-right)
 (alias mod remainder) ;
 (alias %   mod) ;
@@ -1069,15 +1070,15 @@ to-test:
   ( [_ x]
     (cond
       ;((ffi-s? (any->str 'x))  "ffi") ;x if not sym
-      ((sym?  x)      "symbol") ;
+      ((symbol?  x)   "symbol") ;
       ((bool? x)      "boolean")
-      ((num?  x)      "number") ;
+      ((number?  x)   "number") ;
       ((char? x)      "char") ;
-      ((str?  x)      "string") ;
+      ((string?  x)   "string") ;
       ((nilp  x)      "null")
       ((list? x)      "list") ;
       ((pair? x)      "pair")
-      ;((ffi?  x)      "ffi") ;
+      ;((ffi?  x)     "ffi") ;
       ((fn?   x)      "fn") ;procedure
       ((vector? x)    "vector") ;
       ((void? x)      "void")
@@ -1852,8 +1853,8 @@ to-test:
 (def (compose . gs) ;@
   (def [_ ret gs]
     (if
-      [nilp (cdr gs)] ;?
-        (lam xs (ret [redu (car gs) xs])) ;
+      [nilp (cdr gs)] ;
+        (lam xs (ret [apply (car gs) xs])) ;
       (_
         (lam (x) (ret [(car gs) x]))
         (cdr gs)
@@ -3359,14 +3360,14 @@ to-test:
 )
 (def (xn-mk-list . xns) (xn-mk-list% xns)) ;
 
-(def (nx->list n x) ;a bit faster than make-list
-  (def (_ n rest)
+(def/va (nx->list n x [xs0 nil]) ;a bit faster than make-list ; xs0
+  (def (_ n ret)
     (cond
-      [(< n 1) rest]
+      [(< n 1) ret]
       [else
-        (_ (1- n) [cons x rest]) ] ; cons is fast
+        (_ (1- n) [cons x ret]) ] ; cons is fast
   ) )
-  (_ n nil)
+  (_ n xs0)
 )
 
 (defn nlist% (xs n) ;xs need append is slow
