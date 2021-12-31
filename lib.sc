@@ -12,6 +12,8 @@
 
   - Update notes:
     - 2.00
+      -  M add: (list/merge xs ys [f-sel])
+      -  m add: displn
       -  L upd: nx->list
       -  K chg: stru> ~> any>
       -  k fix: map-for-combinations
@@ -630,6 +632,7 @@
 (ali str->list string->list)
 ;(ali str-divide string-divide)
 (alias disp display*) ;
+(alias displn displayln*)
 
 (defsyt sy/num-not-defa-vals%
   ([_ () n] n)
@@ -1734,9 +1737,11 @@ to-test:
 
 ;
 
-(def (display* . xs)
+(def (display* . xs) (display*% xs))
+
+(def (display*% xs)
   (def (_ xs)
-    (if (nilp xs) *v
+    (if (nilp xs) *v ;
       (bgn
         (display (car xs)) ;write/pretty-print/display/?
         [_ (cdr xs)]
@@ -1744,6 +1749,10 @@ to-test:
   ;(if *will-disp*
     (_ xs)
 ) ;)
+
+(def (displayln* . xs)
+  (display*% xs) (newline)
+)
 
 (def (ok? x)
   (if [or (nilp x) (fal? x)] F
@@ -2078,6 +2087,20 @@ to-test:
   (if (nilp xs) Err ;
     (_ xs)
 ) )
+
+;(list/merge `(,nil a ()) `(x b () z) (lam (x y) [if (nilp x) y x]))
+(def/va (list/merge xs ys [f-sel (lam (x y) [if (nilp x) y x])])
+  (def (~ ret xs ys)
+    (if (nilp xs)
+      [append (rev ret) ys]
+      (if (nilp ys)
+        [append (rev ret) xs]
+        (let/ad xs ;(let/ad- ys y
+          (let ([ay(car ys)] [dy(cdr ys)])
+            [~ (cons (f-sel a ay) ret) d dy]
+  ) ) ) ) )
+  (~ nil xs ys)
+)
 
 (define windows?
   (case [machine-type]
@@ -3065,8 +3088,8 @@ to-test:
       (list [list x n]) ;
       (let/ad xs
         (if (= x a) ;
-          (_ d x (1+ n))
-          (cons [list x n] (_ d a 1))
+          [_ d x (1+ n)]
+          (cons [list x n] [_ d a 1])
   ) ) ) )
   (_ xs x n)
 )
@@ -6622,7 +6645,7 @@ to-test:
 ) )
 
 ;(rgb->yuv '(r g b)) ;-> '(y u v)
-(def (rgb->yuv rgb) ;std ;601/std/709
+(def (rgb->yuv rgb) ;std ;601/std/709 
   (let
     ( [y (foldl +  0  (map * '( 0.29882   0.58681   0.114363) rgb))] ;std
       [u (foldl + 128 (map * '(-0.172485 -0.338718  0.511207) rgb))] ;Pb
