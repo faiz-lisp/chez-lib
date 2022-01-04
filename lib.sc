@@ -12,6 +12,7 @@
 
   - Update notes:
     - 2.00
+      -  n fix: in-range
       -  M add: (list/merge xs ys [f-sel])
       -  m add: displn
       -  L upd: nx->list
@@ -4198,12 +4199,10 @@ to-test:
   (~ n0 0) ;
 )
 
-(def/va (in-range num s e [lt <]) ;case?
-  (if~
-    [lt num s] F
-    [lt e num] F
-    T
-) )
+(def/va (in-range num s e [lt <=]) ;case?
+  ;(if~ [lt num s] F [lt e num] F T)
+  (if [and (lt s num) (lt num e)] T F)
+)
 
 (def (float->fix flo) (flonum->fixnum [round flo]))
 
