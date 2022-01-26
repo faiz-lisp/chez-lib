@@ -12,6 +12,8 @@
 
   - Update notes:
     - 2.00
+      -  o add: (lam-unify '(lam (x y) (list x y))) -> '(lam (x1 x2) (list x1 x2))
+      -  N add: (cap-upcase "asd") -> "Asd"
       -  n fix: in-range
       -  M add: (list/merge xs ys [f-sel])
       -  m add: displn
@@ -161,7 +163,7 @@
     - eq =, eql
 
   - todo:
-    - lam/va, lam-macro - include
+    - lam/va, lam-macro, include
     - pcre->match?
     - (deep-action/map/apply g xs [seq]): d-remov
     - end->car
@@ -321,34 +323,34 @@
 
 ;================= aliases and syntaxes ===================
 
-(alias ali      alias)
+(alias ali      alias )
 (ali   imp      import)
 (ali   lam      lambda)
-(ali   letn     let*)
+(ali   bgn      begin )
+(ali   letn     let*  )
 (ali   fn       lambda)
-(ali   bgn      begin)
+(ali   progn    begin )
 
-(alias quo      quote)
+(alias case-lam case-lambda)
 (alias def-syt  define-syntax)
 (alias syt-ruls syntax-rules)
 (alias syt-case syntax-case)
-(alias case-lam case-lambda)
-(alias progn    begin)
-(alias els      else)
+(alias quo      quote)
+(alias els      else )
 
 (alias vec      vector)
-(alias vecp     vector?)
-(alias vec-ref  vector-ref)
-(alias vec->lis vector->list)
-(alias lis->vec list->vector)
+(alias vecp     vector?) ;
 (alias vec-len  vector-length)
+(alias vec-ref  vector-ref)
+(alias vec->lis vector->list) ;
+(alias lis->vec list->vector) ;
 
-(alias id id-car)
-(ali exist-file? file-exists?)
+(ali   exist-file? file-exists?)
+(alias id       id-car)
 
 ; defaults
 
-(ali trim trim-left)
+(ali trim   trim-left)
 (ali trim-n trim-left-n)
 ;(alias trim-head trim-head-1)
 ;(alias trim-tail trim-tail-1)
@@ -2157,6 +2159,14 @@ to-test:
     (_ db 1)
 ) )
 
+;conv
+
+;(capitalize "asd") ;-> "Asd"
+(def/va (cap-upcase ss [x->list str->list] [list->x list->str]) ;
+  (let/ad [x->list ss] ;part?
+    [list->x (cons (char-upcase a) d)]
+) )
+
 ; list
 
 (def (rconz ys x) ;?
@@ -2340,6 +2350,18 @@ to-test:
   ) ) )
   [_ kvs kvs-new]
 )
+
+;'(lam xs (list xs))
+;'(lam (x . xs) (list x xs))
+;'(lam (x) (lam (x) (list x)))
+;(lam-unify '(lam (x y) (list x y))) ;-> '(lam (x1 x2) (list x1 x2))
+(def (lam-unify lam-expr)
+  (letn
+    ( [paras (No2 lam-expr)]
+      [tmp  (list/-nth paras)]
+      [mapp (map (lam (x) [list (car x) (str->sym (str 'x (cadr x)))]) tmp)] )
+    (dmap (curry key->val mapp) lam-expr)
+) )
 
 (def/va (rotate! xs [n 1]) ;ret?
   (for [n] (car->end! xs)) ;@? [rev? F] ;end->car!
@@ -3307,17 +3329,16 @@ to-test:
 
 (def (command-result cmd)
   (let-values
-    ( [ (in ou er id)
+    ( ( [in ou er id]
         (open-process-ports cmd ;
           (buffer-mode block)
-          (make-transcoder (utf-8-codec)) ) ] ;
-    )
-    (let loop ([ret nil])
+          (make-transcoder (utf-8-codec))
+    ) ) )
+    (let ~ ([ret nil])
       (if (eof-object? (peek-char ou))
-        (str (rev ret)) ;\r\n?
-        [loop (cons (read-char ou) ret)] ;% strcat
+        (str (rev ret)) ;\r\n
+        [~ (cons (read-char ou) ret)] ;
 ) ) ) )
-
 
 
 (def [bool x] (if x T F)) ;nil? 0? ;does it conflit with bool type in ffi ?
@@ -3341,17 +3362,17 @@ to-test:
 (def (any->str x)
   (cond
     ((symbol? x) (sym->str            x)) ;
-    ((bool?   x)  "") ;               x
+    ((bool?   x)                      "") ;               x
     ((number? x) (number->string      x))
-    ((char?   x) (list->string (list  x)))
-    ((string? x)                      x)
+    ((char?   x) (list->string (list x)))
+    ((string? x)                       x)
     ((list?   x) (lis->str            x)) ;
-    ((pair?   x) (lis->str(pair->list% x)))
+    ((pair?   x) (lis->str (pair->list% x)))
     ;((ffi?   x) (sym->str           'x)) ;name?
     ((fn?     x)  "") ;ty?
     ((void?   x)  "")
     ((atom?   x) (sym->str           'x)) ;
-    (else          "")
+    (else         "")
 ) )
 (def (lis->str xs) ;
   (redu~ strcat (map any->str xs)) ;
@@ -5248,6 +5269,8 @@ to-test:
 ) )
 
 ; file: load-file-cont-as-str
+
+(def (file? x) (not [file-directory? x]))
 
 ;(file-name "c:/my.path/file.ex.ext") -> file.ex
 ;(file-name "file.ex") -> file
