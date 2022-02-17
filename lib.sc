@@ -12,6 +12,8 @@
 
   - Update notes:
     - 2.00
+      -  p add: num->nums/carry
+      -  O add: (fmt-nums/carry '(23 23 123) '(24 60 60 1000))
       -  o add: (lam-unify '(lam (x y) (list x y))) -> '(lam (x1 x2) (list x1 x2))
       -  N add: (cap-upcase "asd") -> "Asd"
       -  n fix: in-range
@@ -56,7 +58,6 @@
       - ZL add: str-count
       - Zl upd: .avg
       - ZK fas: myround -> round*
-      - Zk upd: doremi->Hz; add: call-xn
       - ZJ upd: ~=; add: pow/, pow-root
       - Zj upd: avg%
       - ZI fix: deep&
@@ -158,14 +159,13 @@
     - cons vector list
   - not the fastest achievement:
     - reverse append! list-copy
-  - ?
-    - apply let
+  - - apply let
     - eq =, eql
 
   - todo:
-    - lam/va, lam-macro, include
-    - pcre->match?
-    - (deep-action/map/apply g xs [seq]): d-remov
+    - lam/va, lam-macro
+    - pcre->match
+    - (deep-action/apply g xs [seq]): d-remov
     - end->car
     - control[include convert]: strings, files, ...
     - ~(!= 1 2 1), (> 3 2 1), (coprime? 2 15 4)
@@ -311,7 +311,6 @@
     - (_ X x)
     - syt -> '
     - common/special... - :
-
 |#
 
 ;(import (chezscheme)) ;you need this when used --program
@@ -366,6 +365,7 @@
 (alias make-groups combinations)
 (alias walk walk-lhs)
 (ali round* myround)
+(ali int/ quotient)
 
 ;better
 
@@ -1422,7 +1422,7 @@ to-test:
     (let ([t 0] [res nil])
       (if echo? (echol (fmt ": ~s" 'g))) ;
       ;(set! t (clock))
-      (set! t (get-ms))
+      (set! t (get-ms)) ;
       (set! res g)
       ;(set! t (inexa(/ (-(clock)t) CLOCKS_PER_SEC)))
       (set! t (- (get-ms) t))
@@ -1723,7 +1723,7 @@ to-test:
 
 (def void? (curry eq *v))
 (def (str/pair? x) [or(string? x)(pair? x)]) ;x
-(def (str/pair/vec? x) [or(string? x)(pair? x)(vector? x)]) ;for eql/eq
+(def (str/pair/vec? x) [or (string? x)(pair? x)(vector? x)]) ;for eql/eq
 
 (def car.ori car)
 (def cdr.ori cdr)
@@ -2149,14 +2149,14 @@ to-test:
     (_ db 0)
 ) )
 
-(def (nth-of-x x db)
+(def/va (nth-of-x x db [base 1])
   (let ([g (eq/eql x)])
     (def (_ db n)
       (if (nilp db) F
         (if [g (car db) x] n
           (_ (cdr db) (fx1+ n))
     ) ) )
-    (_ db 1)
+    (_ db base) ;
 ) )
 
 ;conv
@@ -3232,6 +3232,43 @@ to-test:
   ) )
   (_ 0 xs)
 )
+
+(def (num->nums/carry num cs) ;left-align
+  (def (~ ret num cs)
+    (if (nilp cs) ret ;
+      (let/ad* cs
+        ( [x (% num a)] ;
+          [rest (quotient num a)] )
+        [~ (cons x ret) rest d]
+  ) ) )
+  (~ nil num [rev cs])
+)
+(def (nums->num/carry xs cs) ;
+  (def (~ ret xs cs)
+    (if [nilp xs] ret
+      (if [nilp cs] (cons ret xs) ;
+        [~ (+ (* ret [car cs]) [car xs]) (cdr xs) (cdr cs)]
+  ) ) )
+  (~ 0 xs cs)
+)
+
+;(fmt-nums/carry '(23 23 123) '(24 60 60)) ;xs~>z->ys
+(def (fmt-nums/carry xs form) ;.%? ;fmt-1st?
+  (def (~ ret xs ys carry)
+    (if (nilp xs) ret
+      (if (nilp ys) (append xs ret)
+        (letn
+          ( [a (car xs)] [d (cdr xs)]
+            [ay(car ys)] [dy(cdr ys)]
+            [new-x (+ carry a)]
+            [new-carry (int/ new-x ay)] ;
+            [rest (% new-x ay)] )
+          (~ (cons rest ret) d dy new-carry)
+  ) ) ) )
+  (let ([len-ys (len form)])
+    (append (~ nil (rev [head% xs len-ys]) (rev [head% form (len xs)]) 0) [tail% xs len-ys])
+) )
+;number
 
 ; string
 
