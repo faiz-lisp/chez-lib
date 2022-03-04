@@ -12,6 +12,12 @@
 
   - Update notes:
     - 2.00
+      -  s add: withs?
+      -  R upd: pop
+      -  r add: key->nth
+      -  Q add: x=>y? x y xys [defa nil]
+      -  q upd: memorized-fx
+      -  P upd: remov .. [g nil]
       -  p add: num->nums/carry
       -  O add: (fmt-nums/carry '(23 23 123) '(24 60 60 1000))
       -  o add: (lam-unify '(lam (x y) (list x y))) -> '(lam (x1 x2) (list x1 x2))
@@ -59,7 +65,6 @@
       - Zl upd: .avg
       - ZK fas: myround -> round*
       - ZJ upd: ~=; add: pow/, pow-root
-      - Zj upd: avg%
       - ZI fix: deep&
       - Zi add: int->list next-to
       - Zg add: fold% exist-same? max-min
@@ -327,8 +332,8 @@
 (ali   lam      lambda)
 (ali   bgn      begin )
 (ali   letn     let*  )
-(ali   fn       lambda)
-(ali   progn    begin )
+(alias fn       lambda)
+(alias progn    begin )
 
 (alias case-lam case-lambda)
 (alias def-syt  define-syntax)
@@ -337,7 +342,7 @@
 (alias quo      quote)
 (alias els      else )
 
-(alias vec      vector)
+(ali   vec      vector)
 (alias vecp     vector?) ;
 (alias vec-len  vector-length)
 (alias vec-ref  vector-ref)
@@ -547,7 +552,7 @@
 ;(let/ad '(1 2 3) d) ~> '(2 3)
 (defsyt let/ad
   ( [_ xs code ...]
-    (fluid-let-syntax ;not for choose func
+    (fluid-let-syntax ;syntax-parameter?
       ( [a (identifier-syntax (car xs))]
         [d (identifier-syntax (cdr xs))] )
       code ...
@@ -1032,15 +1037,16 @@ to-test:
     (swap-xths! xs (1- m) ys (1- n)) )
 )
 
-
 (def-syt (pop stx)
-  (syt-case stx ()
+  (syntax-case stx ()
     ( [_ xs]
       [identifier? #'xs]
-      #'(setq xs (cdr xs)) )
+      #'(let ([ret (car xs)])
+        [set! xs (cdr xs)]
+        ret ) )
     ( [_ xs]
-      #'(car xs) )
-) )
+      #'(car xs)
+) ) )
 
 (def-syt (push stx)
   (syntax-case stx () ;
@@ -2256,6 +2262,19 @@ to-test:
   (_ xz)
 )
 
+;key->x 'v/kv/nth k kvs = defa? defa ~base
+(def/va (key->nth k kvs [base 1] [= eql] [defa? F] [defa nil]) ;
+  (def (_ xz i) ;
+    (if (nilp xz)
+      [if defa? defa k]
+      (let ([kv (car xz)] [yz (cdr xz)])
+        (if [= k (car kv)]
+          i ;k v kv i
+          [_ yz (1+ i)] ;
+  ) ) ) )
+  (_ kvs base)
+)
+
 ;(val->key '([a 1][b 2][c]) '3)
 (def/va (val->key xz x [= eql] [f-case id]) ;
   (def (_ xz)
@@ -2555,7 +2574,7 @@ to-test:
           ) ) ) )
           (_ xs)
     ) ) )
-    ([x xs] (remov-1? x xs eql))
+    ([x xs] (remov-1? x xs eql)) ;
 ) )
 ;(ali remov-1)
 
@@ -2779,12 +2798,12 @@ to-test:
   (_ xs 1)
 )
 
-(def (list- xs ys) ;@
+(def/va (list- xs ys [= nil]) ;@
   (def (_ xs ys)
     (if~
       (nilp xs) nil
       (nilp ys) xs
-      [_ (remov-1 (car ys) xs) (cdr ys)] ;
+      [_ (remov-1 (car ys) xs =) (cdr ys)] ;
   ) )
   (_ xs ys)
 )
@@ -3069,12 +3088,14 @@ to-test:
 )
 
 (def (divides xs seps)
-  (def (_ xz seps)
+  (def (~ xz seps)
     (if (nilp seps) xz
-      (_ [redu append (map [rcurry divide (car seps)] xz)]
+      (~
+        (redu append
+          (map [rcurry divide (car seps)] xz) ) ;
         (cdr seps)
   ) ) )
-  [_ (list xs) seps]
+  [~ (list xs) seps]
 )
 
 ;(separa '(x y z) 'e) ;-> '(x e y e z)
@@ -3145,7 +3166,7 @@ to-test:
   ) ) ) )
   (~ bs)
 )
-(def (logic-or . bs)
+(def (logic-or . bs) ;f-or
   (def (~ bs)
     (if (nilp bs) F
       (let/ad bs
@@ -4497,7 +4518,7 @@ to-test:
       (setq fail ;
         (lam ()
           (if (nilp *paths*)
-            (if once? F [cc F])
+            (if once? F [cc F]) ;
             (let ([p1 (car *paths*)])
               [setq *paths* (cdr *paths*)]
               (p1) ;
@@ -4505,7 +4526,7 @@ to-test:
   [~ xs]
 )
 
-(def/va (chooses xs [n 1] [rep? T] [once? T]) ;
+(def/va (chooses xs [n 1] [rep? T] [once? T]) ;!= one?
   (def (~ ret xs i)
     (if (fx> i n) ret
       (let ([c (choose xs once?)])
@@ -4864,8 +4885,8 @@ to-test:
   [_ xs nil]
 )
 
-(def (remov-1 x xs)
-  (let ([g (eq/eql x)]) ;0.0?
+(def/va (remov-1 x xs [g nil]) ;
+  (let ([g (if (nilp g) (eq/eql x) g)]) ;
     (def (_ xs)
       (if (nilp xs) nil
         (let ([a(car xs)] [d(cdr xs)])
@@ -4874,8 +4895,8 @@ to-test:
     ) ) ) )
     (_ xs)
 ) )
-(def (remov-all x xs)
-  (let ([g (eq/eql x)]) ;
+(def/va (remov-all x xs [g nil])
+  (let ([g (if (nilp g) (eq/eql x) g)])
     (def (_ xs)
       (if (nilp xs) nil
         (let/ad xs
@@ -4886,12 +4907,12 @@ to-test:
     (_ xs)
 ) )
 
-(def (remov-n x xs n)
-  (let ([g (eq/eql x)])
+(def/va (remov-n x xs n [g nil])
+  (let ([g (if (nilp g) (eq/eql x) g)])
     (def [_ xs n]
       (if [or (eq n 0) (nilp xs)] xs ;
-        (if~ [< n 0] [remov-all x xs] ;g
-          [eq n 1] [remov-1 x xs]
+        (if~ [< n 0] [remov-all x xs g] ;
+          [eq n 1] [remov-1 x xs g]
           (let ([a (car xs)] [d (cdr xs)])
             (if (g a x)
               [_ d (1- n)]
@@ -4902,13 +4923,14 @@ to-test:
 
 (def remov
   (case-lam
-    ( [x xs n] ;@
+    ([x xs n g] ;@
       (if [< n 0]
         (if [nilp x]
           (remov-nil xs)
-          (remov-n x xs n) ) ;(remov-all x xs)
-        (remov-n x xs n)
+          (remov-n x xs n g) ) ;(remov-all x xs)
+        (remov-n x xs n g)
     ) )
+    ([x xs n] (remov x xs n nil)) ;
     ([x xs] (remov x xs -1))
 ) )
 
@@ -5299,8 +5321,8 @@ to-test:
   (* x (sigmoid x))
 )
 
-(defn/defa nonlin (x deriv) [F] ;
-  (if (eql deriv T)
+(def/va (nonlin x [deriv? F])
+  (if (eq deriv? T)
     (* x [- 1 x])
     (sigmoid x)
 ) )
@@ -6187,6 +6209,8 @@ to-test:
 ;(find-htab-key htab value  [eql])
 ;(find-htab-keys htab value [eql])
 
+; logic
+
 (def_ [exist-cond? g x xs] ;
   (if (nilp xs) F ;
     (let/ad xs
@@ -6230,6 +6254,18 @@ to-test:
   (_ xs F)
 )
 
+;issue: if multi same keys/kvs
+;(x-is-y? 'Jack 'will-die '([Jack human][human will-die]))
+(def/va (x=>y? x y [xys '([x a][a y])] [defa nil])
+  (def (~ k)
+    (if [eq k y] T
+      (let ([tmp (key->val xys k eq id T defa)]) ;
+        (if [eq tmp defa] F ;
+          [~ tmp]
+  ) ) ) )
+  (~ x)
+)
+
 ;todo: Dijkstra
 
 ; (defun memorize (fn) ;f.xs
@@ -6241,15 +6277,14 @@ to-test:
             ; (apply fn args)
 ; ) ) ) ) ) )
 
-(def (memorize-fx proc) ;memorizify
-  (let
-    ([cache nil])
+(def (memorized-fx proc) ;
+  (let ([cache nil]) ;
     (lam (x) ;
-      (cond
-        [(assq x cache) => cdr] ;(call cdr resl) ;assq ~= key->kv-pair
+      (cond ;([assq x cache] => cdr) ;(cdr resl)
+        ([key->kv cache x eql T F] => cdr) ;
         (else
-          (let ([ans (proc x)]) ;
-            [set! cache (cons (cons x ans) cache)] ;just para and answer in cache for this fx
+          (let ([ans (proc x)])
+            (set! cache [cons (cons x ans) cache]) ;just para and answer in cache for this fx
             ans
 ) ) ) ) ) )
 
@@ -6439,11 +6474,11 @@ to-test:
 
 (def (eq/eql x) ;
   (if (str/pair/vec? x)
-    eql
-    (if (num? x)
-      =
-      eq
-) ) )
+    eql eq
+    ; (if (num? x)
+      ; = ;
+      ; eq )
+) )
 
 ;(def (mem?% x xs) (bool (mem? x xs)))
 
@@ -6552,7 +6587,7 @@ to-test:
     ( [xs ys eql] ;(_ '(1 2 3 4) '(1 2/3)) ;-> Y/N
       (def (_ xs ys)
         (if~
-          (nilp ys) T ;
+          (nilp ys) xs ;T
           (nilp xs) F
           (eql (car xs) (car ys))
             [_ (cdr xs) (cdr ys)]
@@ -6567,15 +6602,25 @@ to-test:
     ( [xs ys eql] ;(_ '(1 2 3 4) '(2 3/4)) ;-> Y/N ;with/contain-p
       (def (_ xs)
         (if (nilp xs) F
-          (if (with-head? xs ys eql) T ;output?
-            [_ (cdr xs)] ;
-      ) ) )
+          (let ([tmp (with-head? xs ys eql)])
+            (if tmp tmp ;T
+              [_ (cdr xs)] ;
+      ) ) ) )
       (if (nilp ys) F
         (_ xs)
     ) )
     ( [xs ys]
       (with? xs ys eql)
 ) ) )
+;(withs? (str->list "asdf") (map str->list '("as" "f")))
+(def (withs? xs yz)
+  (def (~ xs yz)
+    (if (nilp yz) T
+      (let/ad* yz ([rest (with? xs a)])
+        (if rest [~ rest d] F)
+  ) ) )
+  (~ xs yz)
+)
 
 (def/doc (with-sym? s x) ;sym/with?
   (redu (rcurry with? eq) ;
@@ -6609,59 +6654,65 @@ to-test:
 
 (def_ (contain. e m)
   (if~
-    (nilp e) *f
-    (atom e) (if(eql e m)*t *f)
+    (nilp e) F
+    (atom e) (eql e m) ;
     (if~
-      [_(car e)m] *t
-      [_(cdr e)m] *t
-      else   *f
+      [_ (car e) m] T
+      [_ (cdr e) m] T
+      F
 ) ) )
-(def_ (sb. e s1) ;exp syms?
-  (if~ [nilp e] nil
-    [atom e] (if[eql e (cadr s1)] (car s1) e) ;
-    (let [(head.[_ (car e) s1]) (tail.[_ (cdr e) s1])]
-      (cons head. tail.)
+(def_ (sb. e s1) ;exp symbols
+  (if~
+    [nilp e] nil
+    [atom e] (if [eql e (cadr s1)] (car s1) e) ;
+    (let ([head. [_ (car e) s1]] [tail. [_ (cdr e) s1]])
+      (cons head. tail.) ;
 ) ) )
-(def_ (substitution. e m)	;置换 exp marks?
-  (if~ (nilp m) e
-    (bgn
-      (set! e [sb. e (car m)]) ;
-      [_ e (cdr m)]
-) ) )
-(defun compose. (s1 s2)
-  (def (_cp1 s1 s2)
-    (if~ (nilp s1) nil
-      (letn ([ti(caar s1)] [vi(cdar s1)] [new_ti(substitution. ti s2)])
-        (cons (cons new_ti vi) [_cp1 (cdr s1) s2])
-  ) ) )
-  (append (_cp1 s1 s2) s2)
+(def (substitution. e m)	;~置换 exp marks
+  (def (~ e m)
+    (if (nilp m) e
+      [~ (sb. e (car m)) (cdr m)] ;
+  ) )
+  (~ e m)
 )
-(def (unify e1 e2 syms) ;(unify '(a b) '(x y) '[x y])
-  (def (_ e1 e2)
+(def (compose. s1 s2)
+  (def (_cp s1 s2)
+    (if [nilp s1] nil
+      (letn ([ti(caar s1)] [vi(cdar s1)] [new_ti(substitution. ti s2)])
+        (cons (cons new_ti vi) [_cp (cdr s1) s2])
+  ) ) )
+  (append (_cp s1 s2) s2)
+)
+
+(def/va (unify e1 e2 [syms '(x y)]) ;(unify '(a b) '(x y) '[x y])
+  (def (~ e1 e2)
     (let ([bf 0] [f1 0][f2 0] [t1 0][t2 0] [s1 0][s2 0] [g1 0][g2 0]) ;
       (cond
-        ( [or (atom e1)(atom e2)]
-          (when [not(atom e1)] (setq  bf e1  e1 e2  e2 bf)) ;
+        ( [or (atom e1) (atom e2)]
+          (when [not (atom e1)] (setq  bf e1  e1 e2  e2 bf)) ;
           (cond
-            ((equal e1 e2)                         '()) ;
+            ((equal e1 e2)                         nil) ;
             ([and (mem? e1 syms) (contain. e2 e1)] 'fail) ;
-            ((mem? e1 syms)                        `[,(li e2 e1)])
-            ((mem? e2 syms)                        `[,(li e1 e2)])
+            ; ((mem? e1 syms)                        `[,(list e2 e1)]) ;
+            ; ((mem? e2 syms)                        `[,(list e1 e2)])
+            ((mem? e1 syms)                        `(,[list e1 e2])) ;
+            ((mem? e2 syms)                        `(,[list e2 e1]))
             (else                                  'fail)
         ) )
         (else
           (setq
             f1 (car e1)   t1 (cdr e1)
             f2 (car e2)   t2 (cdr e2)
-            s1 [_ f1 f2] )
-          (cond ([eq s1 'fail] 'fail)
+            s1 [~ f1 f2] )
+          (cond
+            ([eq s1 'fail] 'fail)
             (else
               (setq g1 (substitution. t1 s1))
               (setq g2 (substitution. t2 s1))
-              (setq s2 [_ g1 g2])
+              (setq s2 [~ g1 g2])
               (if [eq s2 'fail] 'fail (compose. s1 s2))
   ) ) ) ) ) )
-  (_ e1 e2)
+  (~ e1 e2)
 ) ;type infer
 
 ;(unify '(p a b) '(p x y) '[x y]) ;~> ((A X) (B Y))
@@ -6740,7 +6791,7 @@ to-test:
     [ za ざ ザ][ zi じ ジ][ zu ず ズ][ ze ぜ ゼ][ zo ぞ ゾ] ;
     [ da だ ダ][ di ぢ ヂ][ du づ ヅ][ de で デ][ do ど ド]
     [ ba ば バ][ bi び ビ][ bu ぶ ブ][ be べ ベ][ bo ぼ ボ]
-    [ pa ぱ パ][ pi ぴ ピ][ pu ぷ プ][ pe ぺ ペ][ po ぽ ポ]
+    [ pa ぱ パ][ pi ぴ ピ][ pu ぷ プ][ pe ぺ ペ][ po ぽ ポ] ;
     ;--- extra
     [ si し シ]
     [ ti ち チ][ tu つ ツ][chu つ ツ]
