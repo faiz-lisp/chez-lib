@@ -1661,6 +1661,7 @@ to-test:
 (def    *v   (void))
 (def    *e   '[(err)]) ;
 (def    nil  '()) ;
+(def    nilstr "")
 (def    T    #t)
 (def    F    #f)
 (def    No   *f)
