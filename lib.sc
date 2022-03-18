@@ -12,6 +12,7 @@
 
   - Update notes:
     - 2.00
+      -  T add: rand-elem xs
       -  t add: void*
       -  S upd: ty: str->sym, str/sep%
       -  s add: withs?
@@ -6298,6 +6299,10 @@ to-test:
 ;;; standard prelude @
 
 ; list utilities
+
+(def (rand-elem xs) ;~> x
+  [xth xs (random (len xs))] ;@
+)
 
 ;(divide-after '(x m k y) '(m k)) ;~> '([x m k] [y])
 (def (divide-after xs mark)
