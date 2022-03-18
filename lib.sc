@@ -12,6 +12,8 @@
 
   - Update notes:
     - 2.00
+      -  t add: void*
+      -  S upd: ty: str->sym, str/sep%
       -  s add: withs?
       -  R upd: pop
       -  r add: key->nth
@@ -366,6 +368,7 @@
 (ali str->chs   string->list)
 (ali char->int  char->integer)
 (ali int->char  integer->char)
+(ali num->str number->string)
 (ali replace  list-repl0)
 (alias make-groups combinations)
 (alias walk walk-lhs)
@@ -547,9 +550,7 @@
         (fluid-let-syntax ([_ (identifier-syntax id)]) ;
           expr
 ) ) ] ) )
-;(def_ (asd n) [if(< n 1) nil (cons n [_ (1- n)])])
 
-;(let/ad '(1 2 3) d) ~> '(2 3)
 (defsyt let/ad
   ( [_ xs code ...]
     (fluid-let-syntax ;syntax-parameter?
@@ -558,9 +559,17 @@
       code ...
 ) ) )
 
-(defsyt let/ad*
+(defsyt letn/ad
   ( [_ xs rest code ...]
-    (fluid-let-syntax ;
+    (fluid-let-syntax
+      ( [a (identifier-syntax (car xs))]
+        [d (identifier-syntax (cdr xs))] )
+      (letn rest ;
+        code ...
+) ) ) )
+(defsyt let/ad* ;?
+  ( [_ xs rest code ...]
+    (fluid-let-syntax
       ( [a (identifier-syntax (car xs))]
         [d (identifier-syntax (cdr xs))] )
       (let rest
@@ -623,11 +632,10 @@
       #'(append . xz)
 ) ) )
 
-
-(defsyt cacc ;
-  ([_ (k) bd ...]
-    (call/cc [lam (k) bd ...])
-) )
+; (defsyt cacc ;
+  ; ([_ (k) bd ...]
+    ; (call/cc [lam (k) bd ...])
+; ) )
 (defm (let/cc k bd ...) ;
     (call/cc [lam (k) bd ...])
 )
@@ -700,12 +708,6 @@
 (alias defn/defa defn/values) ;
 
 #|
-(def asd
-  (case-lam
-    ((a b c) (li a b c))
-    ((a c) (asd a 2 c))
-    ((c) (asd 1 2 c)) ) )
-
 (def/va%4
   asd
   ((a 1) (s s) (d 3) (f f))
@@ -719,7 +721,7 @@
 to-test:
   (def/va (asd a b [li li]) (li a b)) ;(asd 1 2) ;--> ok
 |#
-(def-syt (def/va%4 stx)
+(def-syt (def/va%4 stx) ;~ $ &
   (syt-case stx ()
     ;_ g, Ori-pairs para-pairs; main-cnt=(A D), Ori-tmp-cnt=() tmp-cnt=(?); Ret, lamPara=[] bodyPara=[]
     ([_           g ori-pairs ([a A] ... [z Z]) main-cnt ori-tmp-cnt [C1 C2 ...] ret [  lamPara ...] (  bodyPara ...)]
@@ -823,8 +825,8 @@ to-test:
       (collect [i num] do-sth) )
 ) )
 
-(def-syt for ;(for-each g xs)
-  (syt-ruls (in : as)
+(define-syntax for ;(for-each g xs)
+  (syntax-rules (in : as)
     ( [_ i in xs body ...]
       (let loop ([l xs])
         (unless (nilp l)
@@ -889,13 +891,15 @@ to-test:
               [loop (fx1+ i)]
     ) ) ) ) )
 
+    ( [_ k (i n) b1 ...]
+      (for k (i 0 [1- n]) b1 ...) ) ;
     ( [_ k (i from to) b1 ...]
       (let loop ([i from]) ;let when
         (call/cc
           (lam (k)
             (when [<= i to]
               b1 ...
-              [loop (fx1+ i)]
+              [loop (fx1+ i)] ;
     ) ) ) ) )
     ( [_ k (i from to step) b1 ...]
       (let loop ([i from])
@@ -1078,24 +1082,24 @@ to-test:
 ) ) ) ) )
 
 
-(defsyt type-main ;todo detail for printf
+(defsyt type-main ;todo detail for printf ;symbol uses eq is betta
   ( [_ x]
     (cond
       ;((ffi-s? (any->str 'x))  "ffi") ;x if not sym
-      ((symbol?  x)   "symbol") ;
-      ((bool? x)      "boolean")
-      ((number?  x)   "number") ;
-      ((char? x)      "char") ;
-      ((string?  x)   "string") ;
-      ((nilp  x)      "null")
-      ((list? x)      "list") ;
-      ((pair? x)      "pair")
-      ;((ffi?  x)     "ffi") ;
-      ((fn?   x)      "fn") ;procedure
-      ((vector? x)    "vector") ;
-      ((void? x)      "void")
-      ((atom? x)      "other-atom") ;(eof-object) ;x (void) #err
-      (else           "other")  ;other-atoms
+      ((symbol?  x)   'symbol) ;
+      ((bool? x)      'boolean)
+      ((number?  x)   'number) ;
+      ((char? x)      'char) ;
+      ((string?  x)   'string) ;
+      ((nilp  x)      'null)
+      ((list? x)      'list) ;
+      ((pair? x)      'pair)
+      ;((ffi?  x)     'ffi) ;
+      ((fn?   x)      'fn) ;procedure
+      ((vector? x)    'vector) ;
+      ((void? x)      'void)
+      ((atom? x)      'other-atom) ;(eof-object) ;x (void) #err
+      (else           'other)  ;other-atoms
 ) ) )
 (alias ty type-main)
 
@@ -1227,7 +1231,7 @@ to-test:
 (ali mat-nMuln mat-mat-mul)
 (alias relu ReLU)
 (alias diagonalength diagonal-length)
-(defm (quine g) `(,'g ,'g))
+(defm (quine g) `(,'g ,'g)) ;
 (alias exception? condition?)
 (alias try-fail? condition?)
 (ali bad-try? condition?)
@@ -1265,7 +1269,7 @@ to-test:
 
 (defsyt try
   ( [_ exp]
-    (guard [x (else x)] exp) ;(exception? #condition) -> *t
+    (guard [x (else x)] exp) ;(condition? #condition) -> T
 ) )
 
 ;(def asd (lam/lams ([(a) b] . xs) [append (list a b) xs])) ([(asd 1) 2] 3 4)
@@ -1311,9 +1315,9 @@ to-test:
   ( [_ ht child]
     (let ([key (car child)])
       (def (_ ht)
-        (if (eq key (caar ht))
+        (if [eq key (caar ht)]
           (set-car! ht child) ;update!
-          (if (cdr-nilp ht)
+          (if [cdr-nilp ht]
             (set-cdr! ht (list child)) ;add/rpush
             [_ (cdr ht)]
       ) ) )
@@ -1664,6 +1668,7 @@ to-test:
 (def    spc  " ")
 (define Void *v)
 (define Err  *v) ;
+(def (void*) (call/cc (lam (k) (k)))) ;
 
 ;
 
@@ -1914,7 +1919,8 @@ to-test:
 
 
 (def (len* x)
-  ( (if~ [str? x] string-length
+  ( (if~
+      [str? x] string-length
       [vecp x] vector-length
       [nump x] (rcurry nbits 10)
       length )
@@ -1997,7 +2003,7 @@ to-test:
   (strcat/sep sz sep)
 )
 
-(def (str/sep% sep xs)
+(def (str/sep% sep xs) ;nil->""
   (def (_ chz ret)
     (if (nilp chz) ret
       (let ([a (car chz)])
@@ -2005,9 +2011,10 @@ to-test:
           [_ (cdr chz) ret]
           [_ (cdr chz) (append a (cons sep ret))] ;.
   ) ) ) )
-  (let ([chz (rev (map [compose string->list str] xs))]) ;
-    (str (_ [cdr chz] [car chz]))
-) )
+  (if [nilp xs] ""
+    (let ([chz (rev (map [compose string->list str] xs))]) ;
+      (str (_ [cdr chz] [car chz]))
+) ) )
 
 (def (str/sep~ sep . ss) ;(redu (curry str/sep " ") (map str '(123 456 789)))
   (def (_ chz ret)
@@ -3232,7 +3239,7 @@ to-test:
           [quot (quotient num scale)] )
         [_ (cons rem ret) quot]
   ) ) )
-  [map (curry xth Syms) (_ nil num)]
+  [map (curry xth Syms) (_ nil num)] ;
 )
 ;(int->list/scale 123 10) -> '(1 2 3)
 (def/va (int->list/scale num [scale 10])
@@ -3246,7 +3253,7 @@ to-test:
   (_ nil num)
 )
 
-(def/va (list->int/scale xs [scale 10])
+(def/va (list->int/scale xs [scale 10]) ;tab
   (def (_ ret xs)
     (if [nilp xs] ret
       [_ (+ (* ret scale) [car xs]) (cdr xs)] ;
@@ -3757,7 +3764,7 @@ to-test:
   (_ xs iz)
 )
 
-(def (char->string x) (list->string (li x)))
+(def (char->string x) (list->string (list x)))
 
 (def (str-explode s)
   (map char->string (string->list s))
@@ -3947,7 +3954,7 @@ to-test:
 (defn !eql (x y) [not(eql x y)])
 
 (def (tyeq x y) ;
-  (eq (ty x) (ty y))
+  (eq (ty x) (ty y)) ;
 )
 (def (ty-neq x y)
   (neq (ty x) (ty y))
@@ -3961,10 +3968,10 @@ to-test:
     ( [type (ty x)]
       (<>
         (case type
-          ("string" (list string<? string>?))
-          ("char"   (list char<? char>?))
-          ("symbol" [list sym< sym>])
-          ("number" (list < >))
+          ('string (list string<? string>?))
+          ('char   (list char<? char>?))
+          ('symbol [list sym< sym>])
+          ('number (list < >))
           ;vector
           (else nil)
     ) ) )
@@ -4325,7 +4332,7 @@ to-test:
 (def (!==  . xs) [not-exist-meet? =   xs])
 (def (!eql . xs) [not-exist-meet? eql xs])
 
-(def (reset-randseed)
+(def (reset-randseed) ;reset-random-seed
   (random-seed (time-nanosecond (current-time)))
 )
 
@@ -4475,7 +4482,7 @@ to-test:
 
 ;F when no resl
 ;todo: collect resls, not only one, maybe we could get at most n resls
-(def/va (choose% xs [once? T])
+(def/va (choose% xs [once? T]) ;
   (def (~ choices) ;choose
     (if (nilp choices) [fail]
       (let ([choice (car choices)] [rest (cdr choices)])
@@ -5020,13 +5027,12 @@ to-test:
         (map [curry cons (car xs)] rest)
 ) ) ) )
 
-(def/va (deep& [fx id] [fxs id] xs)
+(def/va (deep& [fx id] [fxs id] xs) ;?
   (def (_ x)
     (if~
       [nilp  x] nil
-      [consp x]
-        [fxs (map _ x)] ;@
-      [fx x]
+      [consp x] (fxs [map _ x]) ;@
+      (fx x)
   ) )
   (_ xs)
 )
@@ -5779,8 +5785,8 @@ to-test:
 ;[(yc y-len) '(1 2 3)]
 
 (define (y-len ~)
-  (fn (xs)
-    (if [null? xs] 0
+  (fn [xs]
+    (if [nilp xs] 0
       (1+ [~ (cdr xs)])
 ) ) )
 
@@ -6888,7 +6894,7 @@ to-test:
 (setq *paths* nil) ;shared ;ng name ;*choose-paths*
 
 (setq
-  *chs-numbers*  [map digit->char (range 0 9)]
+  *chs-numbers*  [map digit->char (range 0 9)] ;
   *chs-Letters*  (str->list "ABCDEFGHIJKLMNOPQRSTUVWXYZ") ;A~H 8
   *chs-letters*  (map char-downcase *chs-Letters*)
   *syms-numbers* (range 0 9)
