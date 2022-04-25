@@ -12,6 +12,7 @@
 
   - Update notes:
     - 2.00
+      -  u upd: (in-range num s e [lt <=] [lt2 nil])
       -  T add: rand-elem xs
       -  t add: void*
       -  S upd: ty: str->sym, str/sep%
@@ -25,7 +26,6 @@
       -  O add: (fmt-nums/carry '(23 23 123) '(24 60 60 1000))
       -  o add: (lam-unify '(lam (x y) (list x y))) -> '(lam (x1 x2) (list x1 x2))
       -  N add: (cap-upcase "asd") -> "Asd"
-      -  n fix: in-range
       -  M add: (list/merge xs ys [f-sel])
       -  m add: displn
       -  L upd: nx->list
@@ -346,7 +346,7 @@
 (alias els      else )
 
 (ali   vec      vector)
-(alias vecp     vector?) ;
+(alias vec?     vector?) ;
 (alias vec-len  vector-length)
 (alias vec-ref  vector-ref)
 (alias vec->lis vector->list) ;
@@ -1923,8 +1923,8 @@ to-test:
 (def (len* x)
   ( (if~
       [str? x] string-length
-      [vecp x] vector-length
-      [nump x] (rcurry nbits 10)
+      [vec? x] vector-length
+      [num? x] (rcurry nbits 10)
       length )
     x
 ) )
@@ -3273,7 +3273,7 @@ to-test:
   ) ) )
   (~ nil num [rev cs])
 )
-(def (nums->num/carry xs cs) ;
+(def (nums->num/carry xs cs) ;[base 0] ;- x base
   (def (~ ret xs cs)
     (if [nilp xs] ret
       (if [nilp cs] (cons ret xs) ;
@@ -3774,12 +3774,12 @@ to-test:
 
 ;
 
-(def (ref xs i) ;10ms
+(def/va (ref xs i [base 0]) ;10ms
   (def (~ xs i)
     (if ;10ms ;(nilp xs) xs
       [consp xs]
         (let/ad xs
-          (if (<= i 0) a ;30ms
+          (if (<= i base) a ;30ms
             [~ d (1- i)]
         ) )
       xs ;10ms
@@ -4287,10 +4287,10 @@ to-test:
   (~ n0 0) ;
 )
 
-(def/va (in-range num s e [lt <=]) ;case?
-  ;(if~ [lt num s] F [lt e num] F T)
-  (if [and (lt s num) (lt num e)] T F)
-)
+(def/va (in-range num s e [lt <=] [lt2 nil]) ;case?
+  (let ([lt2 (if (nilp lt2) lt lt2)])
+    (if [and (lt s num) (lt2 num e)] T F)
+) )
 
 (def (float->fix flo) (flonum->fixnum [round flo]))
 
@@ -5054,7 +5054,7 @@ to-test:
 
 ;(group '(1 2 3 4 5 6) 3)
 (def [group xs per] ;?(= m per) (group '(1 2 3 4 5 6) 3 1)
-  (let ([m (if [eq 0 per] 1 per)]) ;
+  (let ([m (if [<= per 0] 1 per)]) ;-2?
     (def (_ ret xs)
       (if (nilp xs) ret
         (let ([aa (head% xs m)] [dd (tail% xs m)]) ;% ;(head-tail xs m)
