@@ -12,6 +12,9 @@
 
   - Update notes:
     - 2.00
+      -  V add: same
+      -  v upd: try exp [ret]
+      -  U chg: range->myrange, since rkt has diffe range
       -  u upd: (in-range num s e [lt <=] [lt2 nil])
       -  T add: rand-elem xs
       -  t add: void*
@@ -376,6 +379,9 @@
 (ali round* myround)
 (ali int/ quotient)
 
+;ex
+(ali range myrange)
+
 ;better
 
 (ali folder? file-directory?)
@@ -633,14 +639,6 @@
       #'(append . xz)
 ) ) )
 
-; (defsyt cacc ;
-  ; ([_ (k) bd ...]
-    ; (call/cc [lam (k) bd ...])
-; ) )
-(defm (let/cc k bd ...) ;
-    (call/cc [lam (k) bd ...])
-)
-
 ;
 
 (alias identity id)
@@ -809,8 +807,8 @@ to-test:
 ) ) ) )
 
 ;(collect 20 expr)
-(def-syt collect
-  (syt-ruls (in)
+(define-syntax collect
+  (syntax-rules (in)
     ( [_ (i num) do-sth]
       (let _ ([i 0])
         (if [>= i num] nil
@@ -1268,9 +1266,11 @@ to-test:
 (alias veconz vec-conz)
 (alias vecdr vec-cdr)
 
-(defsyt try
+(defsyt try ;rkt: option, some ?
   ( [_ exp]
-    (guard [x (else x)] exp) ;(condition? #condition) -> T
+    (guard [x (else x)] exp) ) ;(condition? #condition) -> T
+  ( [_ exp value-for-err]
+    (guard [x (else value-for-err)] exp)
 ) )
 
 ;(def asd (lam/lams ([(a) b] . xs) [append (list a b) xs])) ([(asd 1) 2] 3 4)
@@ -2245,6 +2245,17 @@ to-test:
 
 (def cdr-nilp [lam (x) (nilp (cdr x))]) ;fz
 (def car-nilp [lam (x) (nilp (car x))])
+
+(def/va (same xs ys [= eql]) ;they are unique
+  (def (~ ret xs)
+    (if (nilp xs) ret
+      (let/ad xs ;([ay(car ys)][dy(cdr ys)])
+        (if [mem?% a ys =] ;=
+          (~ (cons a ret) d)
+          (~ ret d)
+  ) ) ) )
+  (~ nil xs) ;rev
+)
 
 (def/va (key->kv xz x [= eql] [defa? F] [defa nil]) ;
   (def (_ xz)
@@ -3536,19 +3547,19 @@ to-test:
 (def (echo% sep . xs) ;(_ xs [sep " "]) ;voidp
   (def (_ sep xs)
     (case [len xs] ;
-      (0 (void))
-      (1 (disp (car xs))) ;
+      ([0] (void))
+      ([1] (disp (car xs))) ;
       (else
         (disp (car xs) sep)
         [_ sep (cdr xs)] ;
   ) ) )
-  (if *will-disp*
+  (if~ *will-disp*
     (_ sep xs)
 ) )
 (def (echo . xs) (apply echo% (cons " " xs))) ;
 
 ;test (range 10 1)
-(def range ;-> (0 ... n-1)
+(def myrange ;-> (0 ... n-1)
   (case-lam
     ( [s e] ;~
       (def (_ ret e)
@@ -3556,7 +3567,7 @@ to-test:
           [_ (cons e ret) (1- e)] ;
       ) )
       (_ nil e) )
-    ( [n] (iota n) )
+    ( [n] ([if chez? #%iota range] n) ) ;
     ( [s e p] ;@
       (let ([g (if [>= p 0] > <)])
         (def (_ i)
@@ -6300,6 +6311,7 @@ to-test:
 
 ; list utilities
 
+
 (def (rand-elem xs) ;~> x
   [xth xs (random (len xs))] ;@
 )
@@ -6493,6 +6505,18 @@ to-test:
 ) )
 
 ;(def (mem?% x xs) (bool (mem? x xs)))
+
+(def/va (mem?% x xs [= eql] [get id] [ret id])
+  (def (_ xs)
+    (if [nilp xs] F
+      (let/ad xs
+        (if
+          [= x [get a]]
+            (cons [ret a] d)
+          [_ d]
+  ) ) ) )
+  (_ xs)
+)
 
 ;(setq a '(1 2 2 3 3 3 4)) ;~> '(2 3)
 (def (filter-same xs)   ;OK ;exist-same?
@@ -6752,7 +6776,7 @@ to-test:
 
 (def/va (data-size/bits dat [nbits 1])
   (letn
-    ( [mx (1+ (redu max dat))] ;1+
+    ( [mx (1+ (redu max dat))] ;1+ ;
       [mx-bit (ceil (log mx 2))] ;.
       [ln (len dat)] )
     (./ (* mx-bit ln) nbits) ;
@@ -6900,10 +6924,10 @@ to-test:
 (setq *paths* nil) ;shared ;ng name ;*choose-paths*
 
 (setq
-  *chs-numbers*  [map digit->char (range 0 9)] ;
+  *chs-numbers*  [map digit->char (myrange 0 9)] ;
   *chs-Letters*  (str->list "ABCDEFGHIJKLMNOPQRSTUVWXYZ") ;A~H 8
   *chs-letters*  (map char-downcase *chs-Letters*)
-  *syms-numbers* (range 0 9)
+  *syms-numbers* (myrange 0 9)
   *syms-Letters* (map [flow char->string str->sym] *chs-Letters*)
 )
 
