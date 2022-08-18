@@ -1,5 +1,5 @@
 
-(define (version) "chez-lib v2.00") ;
+(define (version) "chez-lib v2.01") ;
 (define (git-url) "https://gitxx.com/faiz-xxxx/chez-lib.git")
 
 #|
@@ -11,16 +11,22 @@
    \_______/\__||__|\____/ /_____\        |____/__|\_____/
 
   - Update notes:
-    - 2.00
+    - 2.01
+      -  ~ fix: deep-exist-match?
+    - 2.00      
+      -  Z add: value-if
+      -  z add: rand-list
+      -  y add: quote-quote
+      -  X upd: collect
+      -  x add: lam/va
+      -  W upd: rand-elem/s
       -  V add: same
       -  v upd: try exp [ret]
       -  U chg: range->myrange, since rkt has diffe range
       -  u upd: (in-range num s e [lt <=] [lt2 nil])
       -  T add: rand-elem xs
       -  t add: void*
-      -  S upd: ty: str->sym, str/sep%
       -  s add: withs?
-      -  R upd: pop
       -  r add: key->nth
       -  Q add: x=>y? x y xys [defa nil]
       -  q upd: memorized-fx
@@ -44,9 +50,7 @@
       -  F add: mt/xxx for matrix
       -  e add: ~range x0 n [f]
       -  C add: rmap
-      -  c add: (time->sec (get-time))
       -  A add: (key->kv kvs key [= eql])
-      -  a add: (filter-nths (curry eq 5) '(1 123  5 654 6 5 2)) ;-> nths
     - 1.99
       - ZZ add: (map1/nths (lam (x) (list x)) '(1 2 213 123) '(2 4) F) ;-> '(1 [2] 213 [123])
       - Zz add: (.% 1.27 0.02) ;->0.01
@@ -120,13 +124,12 @@
       -  Q Add: (trim '(1 2 1 2 1 1 2 3 1 2) '(1 2)) ~> '(1 1 2 3) ;
       -  O upd: (beep [456] [500]);\nadd : getcwd;
       -  N add: def-ffi, shell-execute
-      -  L fix: for: map -> for-each; upd : tail=list-tail; add : tail%
+      -  L upd : tail=list-tail; add : tail%
       -  c Add: htab-:kvs,keys,values
-      -  - Add: (doc-ls co) -> documentable-keys -> '(cons cond); house keeping;
     - 1.96 Add: docs, def/doc, doc, doc-paras
-    - 1.95 Upd: fold (_ f x xs), foldl-n (_ n fn xs), infix->prefix (_ xs), ./
-    - 1.94 Add: self-act (_ pow 2 3) => (pow 2 2 2), rev-calc (_ pow 4) => 2
-    - 1.93 Simp algo: fast-expt, (_ g x [n 1])
+    - 1.95 Upd: fold (_ f x xs), foldl-n (_ n fn xs)
+    - 1.94 add: self-act (_ pow 2 3) => (pow 2 2 2)
+    - 1.93 simp algo: fast-expt g x [n 1]
 
   - Suffixes:
     - @ slow / bad
@@ -174,7 +177,7 @@
     - eq =, eql
 
   - todo:
-    - lam/va, lam-macro
+    ~ lam-macro: lazy
     - pcre->match
     - (deep-action/apply g xs [seq]): d-remov
     - end->car
@@ -250,7 +253,6 @@
       - onlisp
       - prolog
       - yin
-      - faiz
     - misc
     - setting
       - fn/short-hand
@@ -588,26 +590,29 @@
     (def_ (f . args) bd...)
 ) )
 
-(defsyt defs ;inner
+(define *will-ret*   #f) 
+(define *will-disp*  #t)
+
+(defsyt defs 
   ((_ a) (def a (void)))
   ((_ a b)
-    (bgn (def a b) (if *will-ret* a)) ;
+    (bgn (def a b) (if *will-ret* a)) 
   )
   ((_ a b c ...)
     (bgn
       (def a b)
-      (defs c ...) ;
+      (defs c ...) 
 ) ) )
 
-(defsyt setq ;outer
+(defsyt setq 
   ((_ a) (set! a (void)))
   ((_ a b)
-    (bgn (set! a b) (if *will-ret* a))
+    (bgn (set! a b) (if *will-ret* a)) 
   )
   ((_ a b c ...)
     (bgn
       (set! a b)
-      (setq c ...) ;
+      (setq c ...) 
 ) ) )
 
 ; c
@@ -783,15 +788,32 @@ to-test:
       #'(def/va%3 g ori           (ret ...      ) [  defas ...] body ...)
 ) ) )
 
+;(lam/va (a [b 2] [c 3]) (list a b c)) ;~> (case-lam ([a] [(lam (b c) body ...) B C]) ([a b] [(lam (c) body ...) C]) ([a b c] [(lam () body ...)]))
+(defsyt lam/va% ;._ ret tails bodys args last-body
+  ([_ (       ) (   t ...) (   b ...) (a ... [z Z]) body]
+    (lam/va% () (z t ...) (body b ...) (a ...) [(lam (z) body) Z]) )
+  ([_ (       ) (   t ...) (   b ...) (a ...)       body] ;
+    (lam/va% ([(a ...) body]) (t ...) (b ...) (a ...)) )
+  ([_ (ret ...) (t1 t ...) (b1 b ...) (a ...)] ;
+    (lam/va% ([(a ... t1) b1] ret ...) (t ...) (b ...) (a ... t1)) )
+  ([_ (ret ...) ()         ()         (a ...)] ;
+    (case-lam ret ...) ;?
+) )
+(defsyt lam/va
+  ([_ (a ...) body ...] (lam/va% () () () (a ...) (bgn body ...)))
+)
+
 ;to do: (def/va (asd [a 1] s [d 3] f) (li a s d f)) ;=> (asd 'A 'S 'F)
 ;to test: (def/va (asd [a 1] [b 2] [c 3]) (li a b c)) ;(asd)
 (defsyt def/va
   ( [_ (f x ...) body ...]
-    (def/va%2 f (x ...) (x ...) () [] body ...) ;
+    (def/va%2 f (x ...) (x ...) () [] body ...)
+    ;(def f (lam/va (x ...) body ...)) ;
 ) )
 (defsyt defn/va
   ( [_ f (x ...) body ...]
-    (def/va%2 f (x ...) (x ...) () [] body ...)
+    ;(def/va%2 f (x ...) (x ...) () [] body ...)
+    (def f (lam/va (x ...) body ...))
 ) )
 (alias def/defa def/va)
 ;test: (def/va (sublis xs [s 0] n) [head(tail xs s)n]) (sublis '(1 2 3) 2)
@@ -809,22 +831,27 @@ to-test:
 ;(collect 20 expr)
 (define-syntax collect
   (syntax-rules (in)
-    ( [_ (i num) do-sth]
-      (let _ ([i 0])
-        (if [>= i num] nil
-          (cons do-sth [_ (1+ i)]) ;
+    ( [_ (i num) body ...]
+      (let _ ([ret nil] [i 0])
+        (if [>= i num] (rev ret)
+          [_ (cons (bgn body ...) ret) (1+ i)] ;
     ) ) )
     ( [_ (i in xs) body ...]
-      (let loop ([l xs])
-        (if (nilp l) nil
+      (let loop ([ret nil] [l xs])
+        (if (nilp l) (rev ret)
           (let ([i (car l)])
-            (cons (bgn body ...) [loop (cdr l)]) ;
+            [loop (cons (bgn body ...) ret) (cdr l)] ;
     ) ) ) )
+    ( [_ (i from to) body ...]
+      (let ~ ([ret nil] [i from]) ;
+        (if [> i to] (rev ret) ;
+          [~ (cons (bgn body ...) ret) (1+ i)] ;
+    ) ) )
     ( [_ num do-sth]
       (collect [i num] do-sth) )
 ) )
 
-(define-syntax for ;(for-each g xs)
+(define-syntax for ;(for-each g xs) ;for~
   (syntax-rules (in : as)
     ( [_ i in xs body ...]
       (let loop ([l xs])
@@ -842,13 +869,11 @@ to-test:
 
     ( [_ (i : xs) body ...]
       (for-each
-        (lam (i)
-          body ...)
+        (lam (i) body ...)
         xs ) )
     ( [_ (i in xs) body ...] ;
       (for-each
-        (lam (i)
-          body ... )
+        (lam (i) body ...)
         xs ) )
 
     ( [_ () b1 ...] ;;(for ((+ 2 3)) ..) ;i?
@@ -1156,7 +1181,6 @@ to-test:
 (alias op-inp-str open-input-string)
 (alias str->ss str-explode)
 
-
 ;C
 
 ;(alias ref list-ref)
@@ -1242,7 +1266,6 @@ to-test:
 (alias num->bump-g num->rbump-g)
 (alias num->bump num->rbump)
 
-
 ;vec@: mk-vec n; vec-fill!; vec-set! v i x;
 
 (ali vec-len  vector-length)
@@ -1266,9 +1289,9 @@ to-test:
 (alias veconz vec-conz)
 (alias vecdr vec-cdr)
 
-(defsyt try ;rkt: option, some ?
+(defsyt try
   ( [_ exp]
-    (guard [x (else x)] exp) ) ;(condition? #condition) -> T
+    (guard [x (else x)] exp) )
   ( [_ exp value-for-err]
     (guard [x (else value-for-err)] exp)
 ) )
@@ -1471,7 +1494,7 @@ to-test:
           (ppat vx x (ppat vy y kt kf) kf) )
         kf
     ) )
-    ([_ v lit kt kf] (if [equal?(quote lit)v] kt kf))
+    ([_ v lit kt kf] (if [equal? (quote lit) v] kt kf))
 ) )
 ;(ppat '(1 b) (,a b) *t *f)
 ;(ppat '(2 3) (,a ,b) b *f)
@@ -1490,13 +1513,13 @@ to-test:
     ) )
     ((_ name v [else e0 e ...]) (bgn e0 e ...))
     ((_ name v [pat (guard g ...) e0 e ...] cs ...) ;pat for pattern
-      (let ([fk (lam() (pmatch-aux name v cs ...))])
+      (let ([fk (lam () (pmatch-aux name v cs ...))])
         (ppat v pat
-          (if(and g ...) (bgn e0 e ...) (fk))
+          (if (and g ...) (bgn e0 e ...) (fk))
           (fk)
     ) ) )
     ((_ name v [pat e0 e ...] cs ...)
-      (let ([fk (lam() (pmatch-aux name v cs ...))])
+      (let ([fk (lam () (pmatch-aux name v cs ...))])
         (ppat v pat (bgn e0 e ...) (fk))
 ) ) ) )
 
@@ -1572,8 +1595,9 @@ to-test:
 
 (def (get-time)
   (letn
-    ( [date (current-date)]
-      [hr (date-hour date)] [m (date-minute date)] [sec (date-second date)] )
+    ( [date  (current-date)]
+      [hr  (date-hour date)] [m (date-minute date)]
+      [sec (date-second date)] )
     (list hr m sec)
 ) )
 
@@ -1651,8 +1675,12 @@ to-test:
 ;(defc (fnam . paras) [bgn (flg ret-type (para-types) others) (fnam [handled x] . res)])
 
 ;(alias sleep c-sleep)
-
 (alias numofMidiOut midi-out-get-num-devs)
+
+(define-syntax quote-quote
+  (syntax-rules ()
+    [(_ e) (quote (quote e))]))
+
 (ali tail list-tail)
 
 ;===================== defs =======================
@@ -1671,11 +1699,6 @@ to-test:
 (define Void *v)
 (define Err  *v) ;
 (def (void*) (call/cc (lam (k) (k)))) ;
-
-;
-
-(def *will-ret*   #t)
-(def *will-disp*  #t)
 
 ; doc 1/2 flag
 
@@ -1936,6 +1959,12 @@ to-test:
         (nbits x base) ;)
     ]
 ) )
+
+;value
+
+(def/va (value-if va [g? (lam(x)(> x 0))] [defa 0])
+  (if (g? va) va defa)
+)
 
 ;strcat
 ; (def (strcat% ss)
@@ -4258,7 +4287,7 @@ to-test:
   (case-lam
     ([a] (/ 1. [exa->inexa a])) ;
     (xs
-      (foldl (lam (a b) (/ a [exa->inexa b])) [exa->inexa (car xs)] (cdr xs))
+      (fold-left (lam (a b) (/ a [exa->inexa b])) [exa->inexa (car xs)] (cdr xs)) ;
 ) ) )
 
 (def %
@@ -5305,7 +5334,7 @@ to-test:
   (redu~ + (map * da db)) ;
 )
 (defn convolution1 (m1 m2) ;convolution: matrix1 matrix2
-  (redu~ dotmul (map mat2lis (li m1 m2)))
+  (redu~ dotmul (map mat2lis (list m1 m2)))
 )
 
 ;middle-function
@@ -5341,7 +5370,7 @@ to-test:
 )
 
 (def/va (nonlin x [deriv? F])
-  (if (eq deriv? T)
+  (if deriv? ;(eq  T)
     (* x [- 1 x])
     (sigmoid x)
 ) )
@@ -5371,18 +5400,32 @@ to-test:
       (last d)
 ) ) )
 
+;(rand-list (range 1 5) 4) ~> '(1 1 2 5)
+(def/va (rand-list xs n [allow-same? T])
+  (def (_ ret xs n)
+    (if (eq n 0) ret
+      (letn
+        ( [x (rand-elem xs)]
+          [rest (if allow-same? xs (remov-1 x xs))] ;@
+          [ret (cons x ret)] )
+        (if [nilp rest] ret
+          [_ ret rest (1- n)]
+  ) ) ) )
+  (_ nil xs n)
+)
+
 (def/va (rand-filename [name-len 8] [ext ".txt"] [chars *chs-letters*]) ;
   (str (rand-list chars name-len) ext)
 )
 
-(define (read-file-0 file-name) ;guenchi
-  (let ([p (open-input-file file-name)]) ;
-    (let loop ([lst nil] [c (read-char p)])
+(define (read-file-0 file) ;guenchi
+  (let ([p (open-input-file file)]) ;
+    (let ~ ([xs nil] [c (read-char p)])
       (if [eof-object? c]
         (begin
           (close-input-port p)
-          (list->string (reverse lst)) )
-        (loop (cons c lst) (read-char p))
+          (list->string (reverse xs)) )
+        (~ (cons c xs) (read-char p))
 ) ) ) )
 
 (def/va (load-file file [codec "utf-8"]) ;
@@ -5422,8 +5465,8 @@ to-test:
 ) )
 
 (def (save-file0 cont file) ;
-  [if (file-exists? file) (delete-file file)]
-  (let ([of (open-output-file file)]) ;
+  (if [file-exists? file] (delete-file file))
+  (let ([of (open-output-file file)]) ;+ '(append) for append mode
     (write cont of) ;"asd\ndsa\n" print-to-file ?
     (close-port of)
 ) )
@@ -5511,7 +5554,7 @@ to-test:
 (def/va (write-file! file cont [ext-back ".bak"]) ;.last
   (let ([back (str file ext-back)])
     (if (exist-file? file) ;
-      (rename-file! file back) ;
+      (rename-file! file back) ;deny?
       (make-path (get-path file)) ;
     )
     (write-new-file file cont) ; should delete file first
@@ -5555,9 +5598,9 @@ to-test:
 ;[rev? F]
 (def/va (get-file-var s-var s-file [case? T] [line-sep "\n"] [rev? F]) ;how about zhcn? ;\r\n
   (letn
-    ( [conv (if case? id str-downcase)]
-      [f (if rev? val->key key->val)] ;eql
-      [cont (conv (load-file s-file))]) ;
+    ( [conv (if case? id  str-downcase)]
+      [f    (if rev? val->key key->val)]   ;eql
+      [cont (conv   (load-file s-file))] ) ;
     (f ;
       (map [compose (rcurry str-divide "=") str-trim-head] ;
         [str-divide cont line-sep] ) ;if win ;down?
@@ -6247,6 +6290,7 @@ to-test:
 
 ;(alias defnest defn-nest)
 
+(ali exist-elem? exist-match?)
 (def (exist-match? g xs)
   (def (_ xs)
     (if~
@@ -6263,15 +6307,26 @@ to-test:
 (def (deep-exist-match? g xs)
   (def (_ x flg)
     (if~
-      [nilp  x] flg
+      [g x] T
       [consp x]
-        (_ (car x)
-          [_ (cdr x) flg] )
-      (if (g x) T
-        flg
-  ) ) )
-  (_ xs F)
+        (_ (car x) ;elem
+          [~ (cdr x) flg] ) ;
+      flg
+  ) )
+  (def (~ x flg)
+    (if [nilp  x] flg
+      (_ (car x) ;elem
+        [~ (cdr x) flg] )
+  ) )
+  (~ xs F)
 )
+(def/va (deep-exist? x xs [g eq]) ;flag?
+  (let ([g (lam (a) (g x a))])
+    (if~
+      [g xs] T ;
+      [consp xs] (deep-exist-match? g xs)
+      F
+) ) )
 
 ;issue: if multi same keys/kvs
 ;(x-is-y? 'Jack 'will-die '([Jack human][human will-die]))
@@ -6311,10 +6366,19 @@ to-test:
 
 ; list utilities
 
-
-(def (rand-elem xs) ;~> x
-  [xth xs (random (len xs))] ;@
-)
+(def/va (rand-elem xs [leng nil]) ;nil?
+  (if [nilp xs] (condition)
+    (let ([n (if [nilp leng] (len xs) leng)]) ;
+      [xth xs (random n)] ;@ err-when:rand 0
+) ) )
+(def/va (rand-elems xs [n 1] [leng nil]) ;
+  (let ([n (if [nilp leng] (len xs) leng)])
+    (def (~ ret m)
+      (if [> m n] ret
+        [~ (cons (rand-elem xs n) ret) (1+ m)] ;for/collect 
+    ) )
+    (~ nil 1)
+) ) 
 
 ;(divide-after '(x m k y) '(m k)) ;~> '([x m k] [y])
 (def (divide-after xs mark)
@@ -6444,8 +6508,8 @@ to-test:
   (~ g xs)
 )
 
-(defn call-snest (g . ys)
-  (defn ~ (g ys)
+(def (call-snest g . ys) ;call-nested
+  (def (~ g ys)
     (if (nilp ys) g
       [~ (g (car ys)) (cdr ys)]
   ) )
@@ -6688,22 +6752,28 @@ to-test:
 
 ;unify -- onlisp?
 
-(def_ (contain. e m)
-  (if~
-    (nilp e) F
-    (atom e) (eql e m) ;
+(def (contain. e m)
+  (def (~ e m)
     (if~
-      [_ (car e) m] T
-      [_ (cdr e) m] T
-      F
-) ) )
-(def_ (sb. e s1) ;exp symbols
-  (if~
-    [nilp e] nil
-    [atom e] (if [eql e (cadr s1)] (car s1) e) ;
-    (let ([head. [_ (car e) s1]] [tail. [_ (cdr e) s1]])
-      (cons head. tail.) ;
-) ) )
+      (nilp e) F
+      (atom e) (eql e m) ;
+      (if~
+        [~ (car e) m] T
+        [~ (cdr e) m] T
+        F
+  ) ) )
+  [~ e m]
+)
+(def (sb. e s1) ;exp symbols
+  (def (~ e s1)
+    (if~
+      [nilp e] nil
+      [atom e] (if [eql e (cadr s1)] (car s1) e) ;
+      (let ([head. [~ (car e) s1]] [tail. [~ (cdr e) s1]])
+        (cons head. tail.) ;
+  ) ) )
+  [~ e s1]
+)
 (def (substitution. e m)	;~置换 exp marks
   (def (~ e m)
     (if (nilp m) e
