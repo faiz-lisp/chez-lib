@@ -1,6 +1,6 @@
 
-(define (version) "chez-lib v2.01") ;
-(define (git-url) "https://gitxx.com/faiz-xxxx/chez-lib.git")
+(define (version) "chez-lib v2.01") ;B
+(define (git-url) 'https://gitxxx.com/faiz-xxxx/chez-lib.git)
 
 #|
 == Chez-lib.sc (mainly for Windows NT) - written by Faiz ==
@@ -12,12 +12,13 @@
 
   - Update notes:
     - 2.01
-      -  ~ fix: deep-exist-match?
+      - b add: ren-files/name
+      - A add: cn/latin-char?
+      - ~ fix: deep-exist-match?
     - 2.00      
       -  Z add: value-if
-      -  z add: rand-list
       -  y add: quote-quote
-      -  X upd: collect
+      -  X upd: collect ;my-collect
       -  x add: lam/va
       -  W upd: rand-elem/s
       -  V add: same
@@ -48,7 +49,6 @@
       -  G add: euler
       -  g add: y=fx y=fx->paras
       -  F add: mt/xxx for matrix
-      -  e add: ~range x0 n [f]
       -  C add: rmap
       -  A add: (key->kv kvs key [= eql])
     - 1.99
@@ -119,17 +119,15 @@
       -  C add: (list/seps '(1 2 3) '(4 5)) ~> '(1 4 5 2 4 5 3)
       -  B Add: (lam/lams ([(a) b] c . xs) [append (list a b c) xs])
     - 1.97
-      -  w Add: (deep& rev char-downcase '((#\a #\s) #\D)) ~> '(#\d (#\s #\a))
       -  v Add: (deep-exist-match? [lam (x) (cn-char? x)] '((#\我) #\3)) ~> T
       -  Q Add: (trim '(1 2 1 2 1 1 2 3 1 2) '(1 2)) ~> '(1 1 2 3) ;
       -  O upd: (beep [456] [500]);\nadd : getcwd;
       -  N add: def-ffi, shell-execute
       -  L upd : tail=list-tail; add : tail%
-      -  c Add: htab-:kvs,keys,values
     - 1.96 Add: docs, def/doc, doc, doc-paras
     - 1.95 Upd: fold (_ f x xs), foldl-n (_ n fn xs)
-    - 1.94 add: self-act (_ pow 2 3) => (pow 2 2 2)
-    - 1.93 simp algo: fast-expt g x [n 1]
+    - 1.94 add: self-act (_ pow 2 3) ~=> (pow 2 2 2)
+    ~ 1.93 simp algo: fast-expt g x [n 1]
 
   - Suffixes:
     - @ slow / bad
@@ -177,8 +175,8 @@
     - eq =, eql
 
   - todo:
-    ~ lam-macro: lazy
-    - pcre->match
+    - sha1 md5
+    = pcre->match
     - (deep-action/apply g xs [seq]): d-remov
     - end->car
     - control[include convert]: strings, files, ...
@@ -191,7 +189,7 @@
       - . time activities info net:salt io? file:psw/md5
     - (nthof-g-resl rand '(3 1 4) [max-n 10000000])
     - (nthof-g rand nth [len 1])
-    - grep grep-rn
+    - (grep '("asda" "dx" "Sd") "sd" '[i]) grep-rn
     - reload? load compile udp/tcp get/post v3 juce ui test trace
     - if(!#f/nil): cadr caddr cadddr eval, repl
     - cond case, for map lambda foldl reduce curry recursion repl foldr
@@ -262,7 +260,6 @@
     - clean
 
   - tolearn:
-    - match
     - import
     - fork-thread
     - profile
@@ -302,10 +299,10 @@
     - def-syn
     - def f g -> alias f g
     - nilp (cdr xs)
-    - [] -> ()
+    ~ [] -> ()
     - (small .. big) -> (big .. small)
-    - ?: setq
-    - clauses should be Hz -> hz
+    - ?: setq -> set!
+    - clauses should be high-Hz -> low-hz
     - def/va: case-lambda needs 1~2X time more than original lambda
     - atomp -> consp
 
@@ -343,7 +340,7 @@
 (alias fn       lambda)
 (alias progn    begin )
 
-(alias case-lam case-lambda)
+(ali   case-lam case-lambda)
 (alias def-syt  define-syntax)
 (alias syt-ruls syntax-rules)
 (alias syt-case syntax-case)
@@ -351,7 +348,7 @@
 (alias els      else )
 
 (ali   vec      vector)
-(alias vec?     vector?) ;
+(ali   vec?     vector?)
 (alias vec-len  vector-length)
 (alias vec-ref  vector-ref)
 (alias vec->lis vector->list) ;
@@ -390,10 +387,10 @@
 
 (define-syntax define*
   (syntax-rules ()
-    ( [_ x] (define x [void]) ) 
-    ( [_ (g . args) body ...] 
+    ([_ x] (define x (void)))
+    ([_ (g . args) body ...] 
       (define (g . args) body ...) )
-    ( [_ x e] (define x e) ) ;sym? e: e *v
+    ([_ x e] (define x e)) ;sym? e: e *v
     ; ;The followings make def slow:
     ; ([_ g (args ...) body ...]
       ; (define (g args ...) body ...) ) ;
@@ -431,10 +428,10 @@
 (alias ev     eval)
 (alias reduce apply) ;
 (alias redu   apply) ;
-(alias strcat string-append)
+(ali   strcat string-append)
 (alias foldl  fold-left)
 (alias foldr  fold-right)
-(alias mod remainder) ;
+(alias mod modulo) ;>remainder
 (alias %   mod) ;
 (alias ceil ceiling)
 (alias identities values)
@@ -505,8 +502,8 @@
     (defm (f args ...) body ...)
 ) )
 
-(def-syt (if% stx)
-  (syt-case stx (else) ;
+(define-syntax (if% stx)
+  (syntax-case stx (else) ;
     ( [_ () (bd ...)]
       #'(cond bd ...) )
     ( [_ (last-expr) (bd ...)]
@@ -514,8 +511,8 @@
     ( [_ (k e more ...) (bd ...)]
       #'(if% (more ...) (bd ... [k e]))
 ) ) )
-(def-syt (if~ stx)
-  (syt-case stx ()
+(define-syntax (if~ stx)
+  (syntax-case stx ()
     ([_ bd ...]
       #'(if% [bd ...] []) ;
 ) ) )
@@ -590,8 +587,9 @@
     (def_ (f . args) bd...)
 ) )
 
-(define *will-ret*   #f) 
+;(define *will-ret*   #f)
 (define *will-disp*  #t)
+(define *will-ret* #f)
 
 (defsyt defs 
   ((_ a) (def a (void)))
@@ -1076,7 +1074,7 @@ to-test:
       #'(car xs)
 ) ) )
 
-(def-syt (push stx)
+(define-syntax (push stx)
   (syntax-case stx () ;
     ( [_ args ... x]
       (identifier? #'x) ;
@@ -1411,7 +1409,6 @@ to-test:
     (doc-ls contain [if (htab/fn-lam?) *htab/fn-lam* *htab/fn-doc*]) ;
 ) )
 
-
 ; pattern matching
 
 (define-syntax list-match
@@ -1532,7 +1529,6 @@ to-test:
 ) ) )
 ;
 
-
 (ali chk fix-chk)
 ;(chk 10 cdr '(1 2 3))
 (defm (api? x) (bool [mem? 'x (syms)]))
@@ -1589,13 +1585,14 @@ to-test:
 ) )
 ;(setq xs '(1 (2))) (setf! xs cdr car 3)
 
+
 ; system
 
 ; time
 
 (def (get-time)
   (letn
-    ( [date  (current-date)]
+    ( [date (current-date) ]
       [hr  (date-hour date)] [m (date-minute date)]
       [sec (date-second date)] )
     (list hr m sec)
@@ -1685,20 +1682,23 @@ to-test:
 
 ;===================== defs =======================
 
-(def    *f   #f)
-(def    *t   #t)
+;(def    *e   '[(err)]) ;
 (def    *v   (void))
-(def    *e   '[(err)]) ;
+(def    *e   (condition))
+(def    *t   #t)
+(def    *f   #f)
 (def    nil  '()) ;
 (def    nilstr "")
 (def    T    #t)
 (def    F    #f)
-(def    No   *f)
-(def    Yes  *t)
+(def    Yes  T)
+(def    No   F)
+(def    Ok   T)
+(def    OK   T)
 (def    spc  " ")
 (define Void *v)
 (define Err  *v) ;
-(def (void*) (call/cc (lam (k) (k)))) ;
+;(def (void*) (call/cc (lam (k) (k)))) ;
 
 ; doc 1/2 flag
 
@@ -1761,16 +1761,16 @@ to-test:
 (def (str/pair? x) [or(string? x)(pair? x)]) ;x
 (def (str/pair/vec? x) [or (string? x)(pair? x)(vector? x)]) ;for eql/eq
 
-(def car.ori car)
-(def cdr.ori cdr)
+;(def car.ori car)
+;(def cdr.ori cdr)
 (def (car% xs)
   (if (consp xs)
-    (car xs) ;.ori
+    (#%car xs) ;.ori
     Err
 ) )
 (def (cdr% xs)
   (if (consp xs)
-    (cdr xs)
+    (#%cdr xs)
     Err
 ) )
 
@@ -1856,21 +1856,6 @@ to-test:
   ) ) ) )
   (_ xs)
 )
-; (def (defa->vals/aux paras vals nths-defa-part nths-not-defa nths-defa-rest) ;
-  ; (def (_ paras vals n-head n-ndefa n-tail ret)
-    ; (if (nilp paras)  ret ;
-      ; (let ([ev-cadr (lam (xs) [ev(cadr xs)])])
-        ; (if (nilp vals)
-          ; [_ nil nil 0 0 0 [append~ (rev ret) (map ev-cadr paras)]] ;
-          ; (letn ([a (car paras)] [d (cdr paras)])
-            ; (if (cdr-nilp a)
-              ; (cons (car vals) [_ d (cdr vals) n-head (1- n-ndefa) n-tail ret]) ;
-              ; (if (<1 n-head)
-                ; [_ d vals 0 n-ndefa (1- n-tail) (cons(ev[cadr a])ret)] ;
-                ; (cons (car vals) [_ d (cdr vals) (1- n-head) n-ndefa n-tail ret]) ;
-  ; ) ) ) ) ) ) )
-  ; [_ paras vals nths-defa-part nths-not-defa nths-defa-rest nil]
-; )
 (def (defa->vals/aux paras vals numof-defa-vals numof-not-defa numof-defa-rest) ;@
   (def (_ paras vals n-head n-ndefa n-tail ret)
     (if (nilp paras) (rev ret)
@@ -1894,7 +1879,6 @@ to-test:
   (if (nilp xs) (g)
     (foldl g (car xs) (cdr xs)) ;wrong sometimes: values map echo ;echo ~> '(*v) ;evs ;i/o
 ) ) ;curry?
-
 
 ;
 
@@ -2107,12 +2091,7 @@ to-test:
   ; xs
 ; )
 
-
 (def (cls) [for (42) (newln)])
-
-;
-
-
 
 ;
 
@@ -2210,6 +2189,14 @@ to-test:
   (let/ad [x->list ss] ;part?
     [list->x (cons (char-upcase a) d)]
 ) )
+
+(def (cn-char? ch)
+  (in-range (char->int ch) #x4e00 #x9fa5)
+)
+
+(def (latin-char? ch)
+  (in-range (char->int ch) #x00A0 #x024F)  
+)
 
 ; list
 
@@ -2425,7 +2412,7 @@ to-test:
 ;(lam-unify '(lam (x y) (list x y))) ;-> '(lam (x1 x2) (list x1 x2))
 (def (lam-unify lam-expr)
   (letn
-    ( [paras (No2 lam-expr)]
+    ( [paras (cadr lam-expr)]
       [tmp  (list/-nth paras)]
       [mapp (map (lam (x) [list (car x) (str->sym (str 'x (cadr x)))]) tmp)] )
     (dmap (curry key->val mapp) lam-expr)
@@ -2652,13 +2639,13 @@ to-test:
 ) )
 
 (def (head% xs m)
-  (def (_ xs n)
+  (def (_ xs m) ;rev ret?
     (if~
       [nilp xs] nil
-      [< n 1] nil
+      [< m 1] nil
       (cons
         (car xs)
-        [_ (cdr xs) (1- n)]
+        [_ (cdr xs) (1- m)]
   ) ) )
   (_ xs m)
 )
@@ -3296,11 +3283,11 @@ to-test:
 )
 
 (def/va (list->int/scale xs [scale 10]) ;tab
-  (def (_ ret xs)
-    (if [nilp xs] ret
-      [_ (+ (* ret scale) [car xs]) (cdr xs)] ;
+  (def (~ xs ret)
+    (if (nilp xs) ret
+      (~ [cdr xs] (+ (* ret scale) [car xs])) ;
   ) )
-  (_ 0 xs)
+  (~ xs 0)
 )
 
 (def (num->nums/carry num cs) ;left-align
@@ -3737,7 +3724,7 @@ to-test:
 ) )
 
 ;'((^)(* / %)(+ -))
-(defn read-math-expr xs
+(def (read-math-expr xs)
   (let
     ([p (open-input-string
           (redu~ strcat
@@ -4686,9 +4673,8 @@ to-test:
   (digest% xs [level 12] ;7, 8~12
     (doer
       (lam (x y)
-        ;(+ [* (+ (sin x) (sin y)) 2] 5) ;1~9
-        ;[+ (sin (* [+ (sin x) 2] (1+ y))) 2] ;*4+5
-        (+ 5. [* 4. (sin (* (sin x) (fx1+ y)))]) ;1~9 ;*3+4?
+        ;(+ 5. [* 4. (sin (* (sin x) (fx1+ y)))]) ;1~9 ;*3+4?
+        (+ 5. [* 4. (sin (* x (+ 2 [sin y])))]) ;1~9
   ) ) )
   (let ([factor (pow 10. level)]) ;8~13 front-part
     ([flow (rcurry * factor) round int] ;? int *
@@ -4704,7 +4690,7 @@ to-test:
       (!=0[% yr 100])
 ) ) )
 
-; matrix: rows columns
+; matrix
 
 ;(make-matrix '(3 4 5) 1)
 (def (make-matrix dimensions val) ;dimension
@@ -4765,7 +4751,6 @@ to-test:
     (redu (curry map (curry map f)) mts2) ;
 ) )
 
-
 ;(dot-mul '(1 2 3) '(4 5))
 (def (dot-mul v1 v2) ;get-column? ;
   (letn
@@ -4801,7 +4786,6 @@ to-test:
 (def (mt/inversable? mt) (not [= (mt/det mt) 0])) ;m=n?
 
 ;https://www.shuxuele.com/algebra/matrix-determinant.html
-;(setq m66 (list->matrix (range 36) 6))
 (def (mt/det mt)
   (let ([xz (cdr mt)])
     (def (~ ret row i) ;
@@ -4822,7 +4806,6 @@ to-test:
       [~ 0 (car mt) 1] ;1
 ) ) )
 
-;(mt/A* m33)
 (def (mt/A* mt) ;(-1)^(+ i j)
   (def (~ mt i j)
     (map (lam (x) (remov-xth x j)) ;remov-xth
@@ -5083,10 +5066,8 @@ to-test:
 (def (deep-reverse xs)
   (def (d-rev xs)
     (if~
-      [nilp xs] '() ;
-      [pair? xs]
-      (map d-rev
-        (rev xs) ) ;
+      [nilp  xs] '() ;
+      [pair? xs] (map d-rev (rev xs)) ;
       else xs
   ) )
   (d-rev xs)
@@ -5399,6 +5380,46 @@ to-test:
     (if [nilp d] nil
       (last d)
 ) ) )
+
+;(ren-files/name ".asd." ".dsa.")
+(def/va
+  (ren-files/name src des [path "."] ;ren-files/name
+    [sub-folder? F]
+    [case? T]
+    [chk-ext id] )
+  (letn
+    ( [conv (if case? id str-downcase)]
+      [ss  (conv src)] )
+    (def (~ path)
+      (let
+        ( [things   (ls path)]
+          [rel-path (lam (x) [strcat path "/" x])] )
+        (def (_ ret xs)
+          (if [nilp xs] ;
+            (if [=0 ret] 0 ret)
+            (let/ad xs
+              (let ([name (rel-path a)]) ;file-name
+                (if [folder? name]
+                  (if sub-folder?
+                    (let ((resl [~ name])) ;
+                      (if resl
+                        [_ (+ resl ret) d] ;append?
+                        [_ ret d] ) )
+                    [_ ret d] )
+                  (if [chk-ext (file-ext a)]
+                    (let ([bool (with-str? (conv a) ss)])
+                      (if bool
+                        (bgn
+                          (rename-file name [str-repl name src des])
+                          [_ (1+ ret) d] ) ;cons?
+                        [_ ret d]
+                    ) )
+                    [_ ret d]
+        ) ) ) ) ) )
+        [_ 0 things]
+    ) )
+    [~ path]
+) )
 
 ;(rand-list (range 1 5) 4) ~> '(1 1 2 5)
 (def/va (rand-list xs n [allow-same? T])
@@ -5828,23 +5849,22 @@ to-test:
     ; ((chur+ [chur-fib0(chur-1 n)]) [chur-fib0((chur- n)2)])
 ; ) )
 
-(alias yc y-comb)
+(alias y-comb yc) ;
 
-(define y-comb ;+letrec
-  (fn (self)
-    ( [fn (f) (f f)]
-      (fn (~)
-        (self
-          (fn arg
-            (apply [~ ~] arg) ;
-) ) ) ) ) )
-;[(yc y-len) '(1 2 3)]
+(define (yc func) ;+letrec
+  ( (lam (f) (f f))
+    (lam (rec)
+      (func
+        (lam args
+          (apply [rec rec] args) ;
+) ) ) ) )
 
-(define (y-len ~)
-  (fn [xs]
+(define [y-len rec] ;
+  (lam (xs)
     (if [nilp xs] 0
-      (1+ [~ (cdr xs)])
+      (1+ [rec (cdr xs)])
 ) ) )
+;[(yc y-len) '(1 2 3)]
 
 ;algo
 
@@ -6091,7 +6111,6 @@ to-test:
       (vec-copy! ret (redu + [head ns i]) (xth vz i)) )
     ret
 ) )
-
 
 ;algo for vec-sort
 
@@ -6914,6 +6933,8 @@ to-test:
     ;(256 271 287 304 323 342 362 384 406 431 456 483 512) ;Hz
     256.0 271.2 287.4 304.4 322.5 341.7 362.0 383.6 406.4 430.5 456.1 483.3 ;flo
     ;[256.0  287.4  322.5 341.7  383.6  430.5  483.3]
+    ;(setq Do 262 unit (sqrt Do 12)) (list Do (* unit Do) (*(pow unit 2)Do) ... (*(pow unit 11)Do))
+    ;(setq La 440)
 ) )
 
 (setq
@@ -7039,7 +7060,7 @@ to-test:
 
 (def (restore)
   (setq
-    nil nil
+    nil '()
     ; car #3%car
     ; cdr #3%cdr
     ; map #3%map
