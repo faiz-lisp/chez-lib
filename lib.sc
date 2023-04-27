@@ -1,133 +1,131 @@
 
-(define (version) "chez-lib v2.01") ;B
+(define (version) "chez-lib v2.01") ;C
 (define (git-url) 'https://gitxxx.com/faiz-xxxx/chez-lib.git)
 
 #|
 == Chez-lib.sc (mainly for Windows NT) - written by Faiz ==
-   ________  __                            __   __  _
-  /    ___ \|  |__   ____ _______         |  | |__|| |__
-  /    \  \/|  |  \_/ __ \\__   /   _____ |  | |  || __ \
-  \     \___|  |\  |  ___/  /  /_  /____/ |  |_|  || \_| \
-   \_______/\__||__|\____/ /_____\        |____/__|\_____/
+    ________  __                            __   __  _
+   /   ____ \|  |__   ____ _______         |  | |__|| |__
+  /    \   \/|  |  \_/ __ \\__   /   _____ |  | |  || __ \
+  \     \___ |  |\  |  ___/  /  /_  /____/ |  |_|  || \_| \
+   \_______/ \__||__|\____/ /_____\        |____/__|\_____/
 
   - Update notes:
     - 2.01
-      - b add: ren-files/name
-      - A add: cn/latin-char?
-      - ~ fix: deep-exist-match?
+      - C  add: object->string (cons 'a '(b c)) => "(a b c)"
+      - b  add: ren-files/name
+      - A  add: cn/latin-char?
+      - ~  fix: deep-exist-match?
     - 2.00      
-      -  Z add: value-if
-      -  y add: quote-quote
-      -  X upd: collect ;my-collect
-      -  x add: lam/va
-      -  W upd: rand-elem/s
-      -  V add: same
-      -  v upd: try exp [ret]
-      -  U chg: range->myrange, since rkt has diffe range
-      -  u upd: (in-range num s e [lt <=] [lt2 nil])
-      -  T add: rand-elem xs
-      -  t add: void*
-      -  s add: withs?
-      -  r add: key->nth
-      -  Q add: x=>y? x y xys [defa nil]
-      -  q upd: memorized-fx
-      -  P upd: remov .. [g nil]
-      -  p add: num->nums/carry
-      -  O add: (fmt-nums/carry '(23 23 123) '(24 60 60 1000))
-      -  o add: (lam-unify '(lam (x y) (list x y))) -> '(lam (x1 x2) (list x1 x2))
-      -  N add: (cap-upcase "asd") -> "Asd"
-      -  M add: (list/merge xs ys [f-sel])
-      -  m add: displn
-      -  L upd: nx->list
-      -  K chg: stru> ~> any>
-      -  k fix: map-for-combinations
-      -  J add: defs which is like setq for inner
-      -  j add: rgb->yuv
-      -  I Add: data-compress for pic
-      -  H upd: collect supp in
-      -  h add: sort-by-sames xs > > [append? T]
-      -  G add: euler
-      -  g add: y=fx y=fx->paras
-      -  F add: mt/xxx for matrix
-      -  C add: rmap
-      -  A add: (key->kv kvs key [= eql])
+      -    add: value-if
+      -    add: quote-quote
+      -    upd: collect ;my-collect
+      -    add: lam/va
+      -    upd: rand-elem/s
+      -    add: same
+      -    upd: try exp [ret]
+      -    chg: range->myrange, since rkt has diffe range
+      -    upd: (in-range num s e [lt <=] [lt2 nil])
+      -    add: rand-elem xs
+      -    add: void*
+      -    add: withs?
+      -    add: key->nth
+      -    add: x=>y? x y xys [defa nil]
+      -    upd: memorized-fx
+      -    upd: remov .. [g nil]
+      -    add: num->nums/carry
+      -    add: (fmt-nums/carry '(23 23 123) '(24 60 60 1000))
+      -    add: (lam-unify '(lam (x y) (list x y))) -> '(lam (x1 x2) (list x1 x2))
+      -    add: (cap-upcase "asd") -> "Asd"
+      -    add: (list/merge xs ys [f-sel])
+      -    add: displn
+      -    upd: nx->list
+      -    chg: stru> ~> any>
+      -    fix: map-for-combinations
+      -    add: defs which is like setq for inner
+      -    add: rgb->yuv
+      -    Add: data-compress for pic
+      -    upd: collect supp in
+      -    add: sort-by-sames xs > > [append? T]
+      -    add: euler
+      -    add: y=fx y=fx->paras
+      -    add: mt/xxx for matrix
+      -    add: rmap
+      -    add: (key->kv kvs key [= eql])
     - 1.99
-      - ZZ add: (map1/nths (lam (x) (list x)) '(1 2 213 123) '(2 4) F) ;-> '(1 [2] 213 [123])
-      - Zz add: (.% 1.27 0.02) ;->0.01
-      - Zy add: chg-val-by-key kvs k v [k= eql], chg-vals-by-keys kvs kvs-new [k=]
-      - ZX upd: flow
-      - Zx add: chg-nth% xs iths [value nil] [base 1]
-      - Zw add: (id/f cadr 1 2 3) ;~> 2
-      - Zv add: (setf! xs func car 3) ;
-      - ZU add: sleep-sec 1.01, sleep-ms 1010
-      - Zt add: get-time ~> '(9 0 0)
-      - ZS upd: divide-before
-      - Zs Add: rand-filename
-      - ZR add: max-cnt-of-same: xs [lt <]
-      - Zr add: get-https-ret: url [tmp-file]
-      - ZQ upd: tail%
-      - Zq chg: digest%
-      - ZP add: int<->list/scale
-      - Zp upd: list/nth xs [n0 1]
-      - Zn upd: int->str/system
-      - Zm add: -% cmp% close-to%
-      - ZL add: str-count
-      - Zl upd: .avg
-      - ZK fas: myround -> round*
-      - ZJ upd: ~=; add: pow/, pow-root
-      - ZI fix: deep&
-      - Zi add: int->list next-to
-      - Zg add: fold% exist-same? max-min
-      - Zf upd: randnums fold int
-      - Ze upd: range/total api-ls
-      - Zd add: rotate! walk
-      - Zc fas: factors
-      - Zb add: do-for-pairs, odds, demo/fac~
-      - Za add: let/ad*
-      - Z  add: head-tail%, mysort
-      - z  add: file/cont, keys->vals, flip, fill-lhs/rhs, rgb<->565;\n Fix : groups, arb-group
-      - Y  fix: files/cont: more?
-      - y  Fix: choose: once?
-      - W  add: rand-seq
-      - v  add: ref%, ref*, refs*
-      - T  add: chg-nth, chg-ref-val ;
-      - S  upd: refs nths xths pts->vals
-      - r  upd: demo maze
-      - Q  upd: str-repl%, replace% can CRUD ;
-      - O  add: (do-for xs conv deconv)
-      - L  add: elem-freq, mem?-and-do
-      - K  add: save-bin-file
-      - I  add: strcat/sep-per flow load-binary-file
-      - i  Upd: (save-file cont file [codec "utf-8"])
-      - h  add: replaces, str-repls, get-file-var ...
-      - G  upd: divide
-      - F  add: str-trim-all
-      - D  upd: case (compose); fix : gotcha;
-      - -  add: int<->str/system, digit<->char, global vars
+      -    add: (map1/nths (lam (x) (list x)) '(1 2 213 123) '(2 4) F) ;-> '(1 [2] 213 [123])
+      -    add: (.% 1.27 0.02) ;->0.01
+      -    add: chg-val-by-key kvs k v [k= eql], chg-vals-by-keys kvs kvs-new [k=]
+      -    upd: flow
+      -    add: chg-nth% xs iths [value nil] [base 1]
+      -    add: (id/f cadr 1 2 3) ;~> 2
+      -    add: (setf! xs func car 3) ;
+      -    add: sleep-sec 1.01, sleep-ms 1010
+      -    add: get-time ~> '(9 0 0)
+      -    upd: divide-before
+      -    Add: rand-filename
+      -    add: max-cnt-of-same: xs [lt <]
+      -    add: get-https-ret: url [tmp-file]
+      -    upd: tail%
+      -    chg: digest%
+      -    add: int<->list/scale
+      -    upd: list/nth xs [n0 1]
+      -    upd: int->str/system
+      -    add: -% cmp% close-to%
+      -    add: str-count
+      -    upd: .avg
+      -    fas: myround -> round*
+      -    upd: ~=; add: pow/, pow-root
+      -    fix: deep&
+      -    add: int->list next-to
+      -    add: fold% exist-same? max-min
+      -    upd: randnums fold int
+      -    upd: range/total api-ls
+      -    add: rotate! walk
+      -    fas: factors
+      -    add: do-for-pairs, odds, demo/fac~
+      -    add: let/ad*
+      -    add: head-tail%, mysort
+      -    add: file/cont, keys->vals, flip, fill-lhs/rhs, rgb<->565;\n Fix : groups, arb-group
+      -    fix: files/cont: more?
+      -    Fix: choose: once?
+      -    add: rand-seq
+      -    add: ref%, ref*, refs*
+      -    add: chg-nth, chg-ref-val ;
+      -    upd: refs nths xths pts->vals
+      -    upd: str-repl%, replace% can CRUD ;
+      -    add: (do-for xs conv deconv)
+      -    add: elem-freq, mem?-and-do
+      -    add: save-bin-file
+      -    add: strcat/sep-per flow load-binary-file
+      -    Upd: (save-file cont file [codec "utf-8"])
+      -    add: replaces, str-repls, get-file-var ...
+      -    upd: divide
+      -    add: str-trim-all
+      -    upd: case (compose); fix : gotcha;
+      -    add: int<->str/system, digit<->char, global vars
     - 1.98
-      -  Z add: separa, strcat/sep
-      -  X add: str-divides, file-ext, str/sep-chars
-      -  W add: str-exist?
-      -  S add: load-file
-      -  r add: key->val xz x
-      -  Q add: (divide-after '(x m k y m k z) '(m k)) ~> '([x m k] [y m k] [z]); divide; str-divide
-      -  p Upd: (lisp nil) ~> F
-      -  O add: path operations and grep
-      -  o add: range/total
-      -  n add: (fixnum 1/1.2);\n upd : (sleep 1.0);
-      -  I add: make-file, make-path
-      -  C add: (list/seps '(1 2 3) '(4 5)) ~> '(1 4 5 2 4 5 3)
-      -  B Add: (lam/lams ([(a) b] c . xs) [append (list a b c) xs])
+      -    add: separa, strcat/sep
+      -    add: str-divides, file-ext, str/sep-chars
+      -    add: str-exist?
+      -    add: load-file
+      -    add: key->val xz x
+      -    add: (divide-after '(x m k y m k z) '(m k)) ~> '([x m k] [y m k] [z]); divide; str-divide
+      -    Upd: (lisp nil) ~> F
+      -    add: path operations and grep
+      -    add: range/total
+      -    add: (fixnum 1/1.2);\n upd : (sleep 1.0);
+      -    add: make-file, make-path
+      -    add: (list/seps '(1 2 3) '(4 5)) ~> '(1 4 5 2 4 5 3)
+      -    Add: (lam/lams ([(a) b] c . xs) [append (list a b c) xs])
     - 1.97
-      -  v Add: (deep-exist-match? [lam (x) (cn-char? x)] '((#\我) #\3)) ~> T
-      -  Q Add: (trim '(1 2 1 2 1 1 2 3 1 2) '(1 2)) ~> '(1 1 2 3) ;
-      -  O upd: (beep [456] [500]);\nadd : getcwd;
-      -  N add: def-ffi, shell-execute
-      -  L upd : tail=list-tail; add : tail%
+      -    Add: (deep-exist-match? [lam (x) (cn-char? x)] '((#\我) #\3)) ~> T
+      -    Add: (trim '(1 2 1 2 1 1 2 3 1 2) '(1 2)) ~> '(1 1 2 3) ;
+      -    upd: (beep [456] [500]);\nadd : getcwd;
+      -    add: def-ffi, shell-execute
+      -    upd: tail=list-tail add: tail%
     - 1.96 Add: docs, def/doc, doc, doc-paras
     - 1.95 Upd: fold (_ f x xs), foldl-n (_ n fn xs)
-    - 1.94 add: self-act (_ pow 2 3) ~=> (pow 2 2 2)
-    ~ 1.93 simp algo: fast-expt g x [n 1]
 
   - Suffixes:
     - @ slow / bad
@@ -259,7 +257,8 @@
       - exp/idea
     - clean
 
-  - tolearn:
+  - to learn:
+    - exists for-all vector-map string-for-each
     - import
     - fork-thread
     - profile
@@ -332,13 +331,13 @@
 
 ;================= aliases and syntaxes ===================
 
-(alias ali      alias )
-(ali   imp      import)
-(ali   lam      lambda)
-(ali   bgn      begin )
-(ali   letn     let*  )
-(alias fn       lambda)
-(alias progn    begin )
+(alias ali   alias )
+(ali   imp   import)
+(ali   lam   lambda)
+(ali   bgn   begin )
+(ali   letn  let*  )
+(alias fn    lambda)
+(alias progn begin )
 
 (ali   case-lam case-lambda)
 (alias def-syt  define-syntax)
@@ -366,17 +365,17 @@
 
 ; shorthands
 
-(ali list->str  list->string)
-(ali str->sym   string->symbol)
-(ali str->chs   string->list)
-(ali char->int  char->integer)
-(ali int->char  integer->char)
-(ali num->str number->string)
-(ali replace  list-repl0)
+(ali list->str list->string)
+(ali str->sym  string->symbol)
+(ali str->chs  string->list)
+(ali char->int char->integer)
+(ali int->char integer->char)
+(ali num->str  number->string)
+(ali replace   list-repl0)
+(ali round*    myround)
+(ali int/      quotient)
 (alias make-groups combinations)
-(alias walk walk-lhs)
-(ali round* myround)
-(ali int/ quotient)
+(alias walk        walk-lhs)
 
 ;ex
 (ali range myrange)
@@ -405,6 +404,9 @@
 (ali   eql   equal?)
 (alias equal equal?)
 
+(ali   consp  pair?)
+(ali   len length)
+(ali   strcat string-append)
 (alias f-and logic-and)
 (alias ==    equal?)
 (alias ?: if)
@@ -416,7 +418,6 @@
 (alias num?   number?)
 (alias str?   string?)
 ;(alias lisp   list?) ;nil?
-(ali   consp  pair?)
 (alias pairp  pair?)
 (alias fn?    procedure?)
 (alias voidp  void?) ;voip
@@ -428,7 +429,6 @@
 (alias ev     eval)
 (alias reduce apply) ;
 (alias redu   apply) ;
-(ali   strcat string-append)
 (alias foldl  fold-left)
 (alias foldr  fold-right)
 (alias mod modulo) ;>remainder
@@ -442,7 +442,6 @@
 ;(def (sys cmd) (zero? (system cmd)))
 (alias q exit)
 (alias str-append string-append)
-(ali   len length)
 (alias newln newline)
 (alias nil?  null?)
 
@@ -450,10 +449,10 @@
 (alias 2nd cadr)
 (alias 3rd caddr)
 
-(ali No1 car) ;
-(ali No2 cadr)
-(ali No3 caddr)
-(ali elap elapse)
+(ali No1    car) ;
+(ali No2    cadr)
+(ali No3    caddr)
+(ali elap   elapse)
 (ali origin $primitive)
 
 (alias head list-head) ;.
@@ -2183,6 +2182,10 @@ to-test:
 ) )
 
 ;conv
+
+(def (bytes->string ints)
+  (list->string (map int->char ints))
+)
 
 ;(capitalize "asd") ;-> "Asd"
 (def/va (cap-upcase ss [x->list str->list] [list->x list->str]) ;
@@ -5364,7 +5367,7 @@ to-test:
 ;(file-name "file.ex") -> file
 (def (file-name s-file)
   (letn
-    ( [file (last [str-divides s-file '("/" "\\")])]
+    ( [file (last [str-divides s-file '("/" "\\")])] ;as\ d
       [tmp (str-divide file ".")] ;
       [d   (cdr tmp)] )
     (if (eql file "") nil
@@ -6384,6 +6387,11 @@ to-test:
 ;;; standard prelude @
 
 ; list utilities
+
+(define (object->string x)
+  (call-with-string-output-port ;
+    (lambda (p) (put-datum p x)) ;
+) )
 
 (def/va (rand-elem xs [leng nil]) ;nil?
   (if [nilp xs] (condition)
